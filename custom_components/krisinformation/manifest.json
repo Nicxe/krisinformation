@@ -1,0 +1,10 @@
+{
+    "domain": "krisinformation",
+    "name": "Krisinformation",
+    "documentation": "https://github.com/Nicxe//krisinformation",
+    "requirements": [],
+    "dependencies": [],
+    "codeowners": ["@Nicxe"],
+    "version": "0.0.1",
+    "config_flow": true
+  }
