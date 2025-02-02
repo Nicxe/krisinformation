@@ -2,6 +2,8 @@
 
 Krisinformation Sensor is a custom component for Home Assistant that retrieves crisis alerts (VMA) from the Krisinformation API i Sweden. It allows you to filter alerts by county or view all alerts for the entire country. 
 
+[Krisinformation Alert Card](https://github.com/Nicxe/krisinformation-alert-card).
+
 ## Features
 
 - Retrieve crisis alerts from the Krisinformation API
@@ -20,10 +22,10 @@ Krisinformation Sensor is a custom component for Home Assistant that retrieves c
 
 This integration is possible to install as a custom component via HACS (Home Assistant Community Store).
 
-## Version
 
-**Alpha Version 0.0.1**  
-This is an early alpha release and will be continuously developed and improved.
+> [!WARNING]
+> This is an early alpha release and will be continuously developed and improved.
+
 
 ## Contributing
 
