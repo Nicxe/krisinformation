@@ -20,7 +20,26 @@ Krisinformation Sensor is a custom component for Home Assistant that retrieves c
 
 ## Installation
 
-This integration is possible to install as a custom component via HACS (Home Assistant Community Store).
+You can install this integration as a custom repository by following one of these guides:
+
+### With HACS (Recommended)
+
+To install the custom component using HACS:
+
+1. Click on the three dots in the top right corner of the HACS overview menu.
+2. Select **Custom repositories**.
+3. Add the repository URL: `https://github.com/Nicxe/krisinformation`.
+4. Select type: **Integration**.
+5. Click the **ADD** button.
+
+<details>
+<summary>Without HACS</summary>
+
+1. Download the latest release of the SMHI Alert integration from **[GitHub Releases](https://github.com/Nicxe/krisinformation/releases)**.
+2. Extract the downloaded files and place the `smhi_alerts` folder in your Home Assistant `custom_components` directory (usually located in the `config/custom_components` directory).
+3. Restart your Home Assistant instance to load the new integration.
+
+</details>
 
 
 > [!WARNING]
