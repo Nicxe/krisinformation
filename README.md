@@ -1,24 +1,31 @@
 # Krisinformation Sensor
 
+
+## Overview
+
 Krisinformation Sensor is a custom component for Home Assistant that retrieves crisis alerts (VMA) from the Krisinformation API i Sweden. It allows you to filter alerts by county or view all alerts for the entire country. 
 
-[Krisinformation Alert Card](https://github.com/Nicxe/krisinformation-alert-card).
+There is also a dashboard card specifically for this integration, which can be found here: [Krisinformation Alert Card](https://github.com/Nicxe/krisinformation-alert-card).
+
+<a href="https://buymeacoffee.com/niklasv" target="_blank"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee" style="height: auto !important;width: auto !important;" ></a>
+
 
 ## Features
 
 - Retrieve crisis alerts from the Krisinformation API
 - Filter alerts by county or view all alerts for the whole of Sweden
-- Summary attributes include key fields such as:
-  - **Identifier**
+- Sensor attributes:
   - **Headline**
   - **PushMessage**
   - **Published**
-  - **Preamble**
   - **Area** (with Description and Coordinates)
-- Configurable via the Home Assistant UI with a dropdown to select the desired county
-- Unique sensor ID generation to allow multiple instances of the integration
+  - **map_url** 
+
 
 ## Installation
+
+> [!WARNING]
+> This is an early alpha release and will be continuously developed and improved.
 
 You can install this integration as a custom repository by following one of these guides:
 
@@ -42,14 +49,81 @@ To install the custom component using HACS:
 </details>
 
 
-> [!WARNING]
-> This is an early alpha release and will be continuously developed and improved.
+## Configuration
+
+To add the integration to your Home Assistant instance, use the button below:
+
+<p>
+    <a href="https://my.home-assistant.io/redirect/config_flow_start?domain=krisinformation" class="my badge" target="_blank">
+        <img src="https://my.home-assistant.io/badges/config_flow_start.svg">
+    </a>
+</p>
+
+### Manual Configuration
+
+If the button above does not work, you can also perform the following steps manually:
+
+1. Browse to your Home Assistant instance.
+2. Go to **Settings > Devices & Services**.
+3. In the bottom right corner, select the **Add Integration** button.
+4. From the list, select **Krisinformation**.
+5. Follow the on-screen instructions to complete the setup.
+
+
+
+
+
+## Example: Sending Notifications with Alerts
+
+This example demonstrates how to use the sensor.krisinformation_norrbotten to send a notification containing the Headline and PushMessage from the first alert in the sensor’s alerts attribute.
+
+### Jinja2 Template for Notification
+
+The following Jinja2 template extracts the Headline and PushMessage from the sensor’s alerts attribute:
+
+```
+{% set alert = state_attr('sensor.krisinformation_norrbotten', 'alerts')[0] %}
+{{ alert['Headline'] }}: {{ alert['PushMessage'] }}
+```
+
+### Example Automation
+
+To send this as a notification via Home Assistant, you can use the following automation configuration:
+
+```
+automation:
+  - alias: "Krisinformation Alert Notification"
+    trigger:
+      - platform: state
+        entity_id: sensor.krisinformation_norrbotten
+    condition: []
+    action:
+      - service: notify.mobile_app_your_phone
+        data:
+          title: "{{ state_attr('sensor.krisinformation_norrbotten', 'alerts')[0]['Headline'] }}"
+          message: "{{ state_attr('sensor.krisinformation_norrbotten', 'alerts')[0]['PushMessage'] }}"
+```
+
+**Explanation:**
+* Trigger: The automation is triggered whenever the state of sensor.krisinformation_norrbotten changes.
+* Action: The notify service sends a notification with:
+    * Title: The Headline from the first alert in the alerts attribute.
+    * Message: The PushMessage from the same alert.
+
+This automation ensures you are immediately informed about important updates in the sensor.
+
+> [!NOTE]
+> Replace mobile_app_your_phone with the name of your mobile app notification service. If the alerts attribute contains multiple alerts and you want to handle them differently, you can modify the template to iterate over the list or select specific items.
+
+
+
+## Usage Screenshots
+
+Using the [Krisinformation Alert Card](https://github.com/Nicxe/krisinformation-alert-card) 
+
+![Screenshot](https://github.com/Nicxe/krisinformation-alert-card/blob/main/screenshot.png)
 
 
 ## Contributing
 
 Contributions, bug reports, and feedback are welcome. Please feel free to open issues or pull requests on GitHub.
-
-## License
-
-This project is licensed under the [MIT License](LICENSE).
