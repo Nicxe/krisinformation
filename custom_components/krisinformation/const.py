@@ -2,28 +2,27 @@ DOMAIN = "krisinformation"
 CONF_NAME = "name"
 CONF_COUNTY = "county"
 
-# Lista med giltiga län, med alternativet "Hela Sverige" för att visa alla varningar
 COUNTY_OPTIONS = [
     "Hela Sverige",
-    "Stockholms län",
-    "Västra Götalands län",
-    "Skåne län",
-    "Uppsala län",
-    "Östergötlands län",
-    "Södermanlands län",
-    "Jönköpings län",
-    "Kronobergs län",
-    "Kalmar län",
-    "Gotlands län",
     "Blekinge län",
+    "Dalarna",
+    "Gotlands län",
+    "Gävleborgs län",
     "Hallands län",
+    "Jämtlands län",
+    "Jönköpings län",
+    "Kalmar län",
+    "Kronobergs län",
+    "Norrbottens län",
+    "Skåne län",
+    "Södermanlands län",
+    "Stockholms län",
+    "Uppsala län",
+    "Västmanlands län",
+    "Västerbottens län",
+    "Västernorrlands län",
+    "Västra Götalands län",
     "Värmlands län",
     "Örebro län",
-    "Västmanlands län",
-    "Dalarna",
-    "Gävleborgs län",
-    "Västernorrlands län",
-    "Jämtlands län",
-    "Norrbottens län",
-    "Västerbottens län"
+    "Östergötlands län"
 ]

@@ -1,9 +1,4 @@
 # Krisinformation Sensor
-<img alt="Maintenance" src="https://img.shields.io/maintenance/yes/2025"> <img alt="GitHub last commit" src="https://img.shields.io/github/last-commit/Nicxe/krisinformation"><br><br>
-<img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/Nicxe/krisinformation">
-
-
-
 
 
 ## Overview
@@ -64,6 +59,11 @@ To add the integration to your Home Assistant instance, use the button below:
     </a>
 </p>
 
+
+> [!TIP]
+> You can easily set up multiple sensors for different locations by clicking Add Entry on the Krisinformation integration page in Home Assistant. No YAML configuration is required, and each sensor can have its own unique setup.
+
+
 ### Manual Configuration
 
 If the button above does not work, you can also perform the following steps manually:
@@ -86,7 +86,7 @@ This example demonstrates how to use the sensor.krisinformation_norrbotten to se
 
 The following Jinja2 template extracts the Headline and PushMessage from the sensor’s alerts attribute:
 
-```yaml
+```
 {% set alert = state_attr('sensor.krisinformation_norrbotten', 'alerts')[0] %}
 {{ alert['Headline'] }}: {{ alert['PushMessage'] }}
 ```
@@ -95,7 +95,7 @@ The following Jinja2 template extracts the Headline and PushMessage from the sen
 
 To send this as a notification via Home Assistant, you can use the following automation configuration:
 
-```yaml
+```
 automation:
   - alias: "Krisinformation Alert Notification"
     trigger:
@@ -132,3 +132,5 @@ Using the [Krisinformation Alert Card](https://github.com/Nicxe/krisinformation-
 ## Contributing
 
 Contributions, bug reports, and feedback are welcome. Please feel free to open issues or pull requests on GitHub.
+
+
