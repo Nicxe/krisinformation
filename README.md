@@ -33,6 +33,9 @@ You can install this integration as a custom repository by following one of thes
 
 To install the custom component using HACS:
 
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?repository=krisinformation&category=Integration&owner=Nicxe)
+
+or
 1. Click on the three dots in the top right corner of the HACS overview menu.
 2. Select **Custom repositories**.
 3. Add the repository URL: `https://github.com/Nicxe/krisinformation`.
