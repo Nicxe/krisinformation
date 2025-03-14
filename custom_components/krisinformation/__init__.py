@@ -41,7 +41,7 @@ class KrisinformationDataUpdateCoordinator(DataUpdateCoordinator):
         self.config = config
 
     async def _async_update_data(self):
-        url = "https://api.krisinformation.se/v3/vmas"
+        url = "https://api.krisinformation.se/v3/vmas?allCounties=true"
         try:
             async with async_timeout.timeout(10):
                 response = await self.session.get(url)
