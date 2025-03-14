@@ -27,23 +27,16 @@ class KrisinformationSensor(CoordinatorEntity, SensorEntity):
         filtered_alerts = self._filter_alerts(data)
         summary_list = []
         for alert in filtered_alerts:
+            # Hämta och rensa Headline från avslutande kolon
             headline = alert.get("Headline", "")
             if headline.endswith(":"):
                 headline = headline[:-1].strip()
             area_info = self._get_area_info(alert)
-            map_url = None
-            if area_info and "Coordinates" in area_info:
-                coords = area_info["Coordinates"]
-                if isinstance(coords, list) and len(coords) >= 2:
-                    lat = coords[1]
-                    lon = coords[0]
-                    map_url = f"https://www.google.com/maps/place/{lat},{lon}"
             summary = {
                 "Headline": headline,
                 "PushMessage": alert.get("PushMessage"),
                 "Published": alert.get("Published"),
-                "Area": area_info,
-                "map_url": map_url
+                "Area": area_info
             }
             summary_list.append(summary)
         return {"alerts": summary_list}
@@ -75,7 +68,6 @@ class KrisinformationSensor(CoordinatorEntity, SensorEntity):
         for area in areas:
             if area.get("Type", "").lower() == "county":
                 return {
-                    "Description": area.get("Description"),
-                    "Coordinates": area.get("GeometryInformation", {}).get("PoleOfInInaccessibility", {}).get("coordinates")
+                    "Description": area.get("Description")
                 }
         return {}
