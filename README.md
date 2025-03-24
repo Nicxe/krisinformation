@@ -3,23 +3,13 @@
 
 ## Overview
 
-Krisinformation Sensor is a custom component for Home Assistant that retrieves crisis alerts (VMA) from the Krisinformation API i Sweden. It allows you to filter alerts by county or view all alerts for the entire country. 
+Krisinformation Sensor is a custom component for Home Assistant that retrieves crisis alerts (VMA) from [Sveriges Radio's API for Important Public Announcements](https://vmaapi.sr.se/index.html?urls.primaryName=v3.0-beta). It allows you to filter alerts by municipalities, county or Sweden to view all alerts for the entire country. 
 
 There is also a dashboard card specifically for this integration, which can be found here: [Krisinformation Alert Card](https://github.com/Nicxe/krisinformation-alert-card).
 
 <a href="https://buymeacoffee.com/niklasv" target="_blank"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee" style="height: auto !important;width: auto !important;" ></a>
 
 
-## Features
-
-- Retrieve crisis alerts from the Krisinformation API
-- Filter alerts by county or view all alerts for the whole of Sweden
-- Sensor attributes:
-  - **Headline**
-  - **PushMessage**
-  - **Published**
-  - **Area** (with Description and Coordinates)
-  - **map_url** 
 
 
 ## Installation
@@ -33,9 +23,6 @@ You can install this integration as a custom repository by following one of thes
 
 To install the custom component using HACS:
 
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?repository=krisinformation&category=Integration&owner=Nicxe)
-
-or
 1. Click on the three dots in the top right corner of the HACS overview menu.
 2. Select **Custom repositories**.
 3. Add the repository URL: `https://github.com/Nicxe/krisinformation`.
@@ -90,8 +77,9 @@ This example demonstrates how to use the sensor.krisinformation_norrbotten to se
 The following Jinja2 template extracts the Headline and PushMessage from the sensor’s alerts attribute:
 
 ```
-{% set alert = state_attr('sensor.krisinformation_norrbotten', 'alerts')[0] %}
-{{ alert['Headline'] }}: {{ alert['PushMessage'] }}
+
+{% set alert = state_attr('sensor.krisinformation_hela_sverige', 'alerts')[0] %}
+{{ alert['event'] }}: {{ alert['description'] }}
 ```
 
 ### Example Automation
@@ -103,13 +91,13 @@ automation:
   - alias: "Krisinformation Alert Notification"
     trigger:
       - platform: state
-        entity_id: sensor.krisinformation_norrbotten
+        entity_id: sensor.krisinformation_hela_sverige
     condition: []
     action:
       - service: notify.mobile_app_your_phone
         data:
-          title: "{{ state_attr('sensor.krisinformation_norrbotten', 'alerts')[0]['Headline'] }}"
-          message: "{{ state_attr('sensor.krisinformation_norrbotten', 'alerts')[0]['PushMessage'] }}"
+          title: "{{ state_attr('sensor.krisinformation_hela_sverige', 'alerts')[0]['alerts'] }}"
+          message: "{{ state_attr('sensor.krisinformation_hela_sverige', 'alerts')[0]['description'] }}"
 ```
 
 **Explanation:**

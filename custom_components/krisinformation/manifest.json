@@ -1,10 +1,10 @@
 {
-    "domain": "krisinformation",
-    "name": "Krisinformation",
-    "documentation": "https://github.com/Nicxe//krisinformation",
-    "requirements": [],
-    "dependencies": [],
-    "codeowners": ["@Nicxe"],
-    "version": "0.0.3",
-    "config_flow": true
-  }
+  "domain": "krisinformation",
+  "name": "Krisinformation",
+  "codeowners": ["@Nicxe"],
+  "config_flow": true,
+  "documentation": "https://github.com/Nicxe//krisinformation",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/Nicxe/krisinformation/issues",
+  "version": "0.1.0"
+}

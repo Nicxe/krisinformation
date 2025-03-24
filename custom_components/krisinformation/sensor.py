@@ -1,19 +1,45 @@
+import logging
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN, CONF_NAME, CONF_COUNTY
+from .const import DOMAIN, CONF_NAME, CONF_MUNICIPALITY
 
-async def async_setup_entry(hass, entry, async_add_entities):
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+_LOGGER = logging.getLogger(__name__)
+
+
+async def async_setup_entry(
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback
+):
+    coordinator = hass.data[DOMAIN][config_entry.entry_id]
     async_add_entities([KrisinformationSensor(coordinator)], True)
+
 
 class KrisinformationSensor(CoordinatorEntity, SensorEntity):
     def __init__(self, coordinator):
         super().__init__(coordinator)
-        self._attr_name = coordinator.config.get(CONF_NAME, "Krisinformation varningar")
-        county = coordinator.config.get(CONF_COUNTY)
-        self._attr_unique_id = f"krisinformation_sensor_{county.lower().replace(' ', '_')}"
-        self._county = county
+        config = coordinator.config
+        municipality = config.get(CONF_MUNICIPALITY, "Hela Sverige")
+        base_name = config.get(CONF_NAME, "Krisinformation")
+
+        sanitized = (
+            municipality.lower()
+            .replace(" ", "_")
+            .replace("å", "a")
+            .replace("ä", "a")
+            .replace("ö", "o")
+            .replace("é", "e")
+        )
+
+        self._attr_name = f"{base_name} ({municipality})"
+
+        self._attr_unique_id = f"krisinformation_sensor_{sanitized}"
+
+        self._municipality = municipality
 
     @property
     def state(self):
@@ -26,48 +52,42 @@ class KrisinformationSensor(CoordinatorEntity, SensorEntity):
         data = self.coordinator.data
         filtered_alerts = self._filter_alerts(data)
         summary_list = []
-        for alert in filtered_alerts:
-            # Hämta och rensa Headline från avslutande kolon
-            headline = alert.get("Headline", "")
-            if headline.endswith(":"):
-                headline = headline[:-1].strip()
-            area_info = self._get_area_info(alert)
-            summary = {
-                "Headline": headline,
-                "PushMessage": alert.get("PushMessage"),
-                "Published": alert.get("Published"),
-                "Area": area_info
-            }
-            summary_list.append(summary)
+        for alert, info in filtered_alerts:
+            event = info.get("event", "")
+            raw_description = info.get("description", "")
+            description = " ".join(raw_description.split())
+            sent = alert.get("sent", "")
+            severity = info.get("severity", "")
+            areas_list = [area.get("areaDesc", "") for area in info.get("area", [])]
+            areas_str = ", ".join(areas_list) if areas_list else ""
+            summary_list.append({
+                "identifier": alert.get("identifier", ""),
+                "event": event,
+                "description": description,
+                "sent": sent,
+                "severity": severity,
+                "areas": areas_str
+            })
         return {"alerts": summary_list}
 
     def _filter_alerts(self, data):
         filtered = []
-        if data:
-            if isinstance(data, list):
-                for alert in data:
-                    if self._alert_matches_county(alert):
-                        filtered.append(alert)
-            elif isinstance(data, dict):
-                for alert in data.get("alerts", []):
-                    if self._alert_matches_county(alert):
-                        filtered.append(alert)
+        if not data or not isinstance(data, dict):
+            return filtered
+
+        alerts = data.get("alerts") or []
+        for alert in alerts:
+            if not isinstance(alert, dict):
+                continue
+            if alert.get("msgType") != "Alert":
+                continue
+
+            infos = alert.get("info") or []
+            for info in infos:
+                if not info:
+                    continue
+                if info.get("language") != "sv-SE":
+                    continue
+                filtered.append((alert, info))
+                break
         return filtered
-
-    def _alert_matches_county(self, alert):
-        if self._county.lower() == "hela sverige":
-            return True
-        areas = alert.get("Area", [])
-        for area in areas:
-            if area.get("Type", "").lower() == "county" and area.get("Description", "").lower() == self._county.lower():
-                return True
-        return False
-
-    def _get_area_info(self, alert):
-        areas = alert.get("Area", [])
-        for area in areas:
-            if area.get("Type", "").lower() == "county":
-                return {
-                    "Description": area.get("Description")
-                }
-        return {}
