@@ -1,5 +1,8 @@
 # Krisinformation Sensor
 
+![hacs_badge](https://img.shields.io/badge/HACS-Default-41BDF5.svg?style=)
+<img alt="Maintenance" src="https://img.shields.io/maintenance/yes/2025"> <img alt="GitHub last commit" src="https://img.shields.io/github/last-commit/Nicxe/krisinformation"><br><br>
+<img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/Nicxe/krisinformation">
 
 ## Overview
 
@@ -20,11 +23,13 @@ You can install this integration as a custom repository by following one of thes
 
 To install the custom component using HACS:
 
-1. Click on the three dots in the top right corner of the HACS overview menu.
-2. Select **Custom repositories**.
-3. Add the repository URL: `https://github.com/Nicxe/krisinformation`.
-4. Select type: **Integration**.
-5. Click the **ADD** button.
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Nicxe&repository=krisinformation&category=integration)
+
+or
+1. Install HACS if you don't have it already
+2. Open HACS in Home Assistant
+3. Search for "Krisinformation"
+4. Click the download button. ⬇️
 
 <details>
 <summary>Without HACS</summary>
