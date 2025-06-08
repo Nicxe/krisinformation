@@ -1,4 +1,4 @@
-# Krisinformation Sensor
+# Krisinformation integration
 
 ![hacs_badge](https://img.shields.io/badge/HACS-Default-41BDF5.svg?style=)
 <img alt="Maintenance" src="https://img.shields.io/maintenance/yes/2025"> <img alt="GitHub last commit" src="https://img.shields.io/github/last-commit/Nicxe/krisinformation"><br><br>
@@ -6,7 +6,7 @@
 
 ## Overview
 
-Krisinformation Sensor is a custom component for Home Assistant that retrieves crisis alerts (VMA) from [Sveriges Radio's API for Important Public Announcements](https://vmaapi.sr.se/index.html?urls.primaryName=v3.0-beta). It allows you to filter alerts by municipalities, county or Sweden to view all alerts for the entire country. 
+Krisinformation integration is a custom component for Home Assistant that retrieves crisis alerts (VMA) from [Sveriges Radio's API for Important Public Announcements](https://vmaapi.sr.se/index.html?urls.primaryName=v3.0-beta). It allows you to filter alerts by municipalities, county or Sweden to view all alerts for the entire country.
 
 There is also a dashboard card specifically for this integration, which can be found here: [Krisinformation Alert Card](https://github.com/Nicxe/krisinformation-alert-card).
 
@@ -34,8 +34,8 @@ or
 <details>
 <summary>Without HACS</summary>
 
-1. Download the latest release of the SMHI Alert integration from **[GitHub Releases](https://github.com/Nicxe/krisinformation/releases)**.
-2. Extract the downloaded files and place the `smhi_alerts` folder in your Home Assistant `custom_components` directory (usually located in the `config/custom_components` directory).
+1. Download the latest release of the Krisinformation integration from **[GitHub Releases](https://github.com/Nicxe/krisinformation/releases)**.
+2. Extract the downloaded files and place the `krisinformation` folder in your Home Assistant `custom_components` directory (usually located in the `config/custom_components` directory).
 3. Restart your Home Assistant instance to load the new integration.
 
 </details>
