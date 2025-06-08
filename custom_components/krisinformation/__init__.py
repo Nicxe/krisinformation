@@ -46,7 +46,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     unload_ok = await hass.config_entries.async_unload_platforms(entry, ["sensor"])
     if unload_ok:
-        hass.data[DOMAIN].pop(entry.entry_id)
+        coordinator = hass.data[DOMAIN].pop(entry.entry_id)
+        await coordinator.session.close()
     return unload_ok
 
 
@@ -71,5 +72,5 @@ class KrisinformationDataUpdateCoordinator(DataUpdateCoordinator):
                     data = await response.json()
                     return data
         except Exception as e:
-            _LOGGER.error("Fel vid hämtning från UR:s API: %s", e)
+            _LOGGER.error("Fel vid hämtning från SR:s API: %s", e)
             return {}
