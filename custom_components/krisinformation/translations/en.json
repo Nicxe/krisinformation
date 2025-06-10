@@ -1,0 +1,20 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Krisinformation",
+        "description": "Configure Krisinformation integration",
+        "data": {
+          "name": "Name",
+          "municipality": "Municipality or county"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "name": "Krisinformation Alerts"
+    }
+  }
+}
+

@@ -1,8 +1,7 @@
-import asyncio
 import logging
 from datetime import timedelta
 import async_timeout
-import aiohttp
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -14,6 +13,7 @@ from .const import (
     MUNICIPALITY_DEFAULT,
     COUNTY_MAPPING,
     MUNICIPALITY_MAPPING,
+    BASE_URL,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -32,7 +32,7 @@ async def async_setup(hass, config):
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
-    session = aiohttp.ClientSession()
+    session = async_get_clientsession(hass)
     coordinator = KrisinformationDataUpdateCoordinator(
         hass, session, entry.data, timedelta(seconds=DEFAULT_UPDATE_INTERVAL)
     )
@@ -46,8 +46,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     unload_ok = await hass.config_entries.async_unload_platforms(entry, ["sensor"])
     if unload_ok:
-        coordinator = hass.data[DOMAIN].pop(entry.entry_id)
-        await coordinator.session.close()
+        hass.data[DOMAIN].pop(entry.entry_id)
     return unload_ok
 
 
@@ -58,10 +57,9 @@ class KrisinformationDataUpdateCoordinator(DataUpdateCoordinator):
         self.config = config
 
     async def _async_update_data(self):
-        base_url = "https://vmaapi.sr.se/api/v3-beta/alerts"
         selected = self.config.get(CONF_MUNICIPALITY, MUNICIPALITY_DEFAULT)
         geocode = _get_geocode(selected)
-        url = base_url
+        url = BASE_URL
         if geocode:
             url += f"?geocode={geocode}"
 

@@ -1,0 +1,20 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Krisinformation",
+        "description": "Konfigurera Krisinformation-integrationen",
+        "data": {
+          "name": "Namn",
+          "municipality": "Kommun eller län"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "name": "Krisinformation VMA"
+    }
+  }
+}
+
