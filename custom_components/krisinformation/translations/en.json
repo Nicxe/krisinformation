@@ -13,7 +13,9 @@
   },
   "entity": {
     "sensor": {
-      "name": "Krisinformation Alerts"
+      "krisinformation": {
+        "name": "Krisinformation Alerts"
+      }
     }
   }
 }

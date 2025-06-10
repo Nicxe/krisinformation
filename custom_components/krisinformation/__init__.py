@@ -2,6 +2,7 @@ import logging
 from datetime import timedelta
 import async_timeout
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers import config_validation as cv
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -18,6 +19,8 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 DEFAULT_UPDATE_INTERVAL = 300  # 5 minuter
+
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 def _get_geocode(selected):
     if not selected or selected == "Hela Sverige":

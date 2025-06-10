@@ -13,7 +13,9 @@
   },
   "entity": {
     "sensor": {
-      "name": "Krisinformation VMA"
+      "krisinformation": {
+        "name": "Krisinformation VMA"
+      }
     }
   }
 }
