@@ -16,11 +16,11 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback
 ):
     coordinator = hass.data[DOMAIN][config_entry.entry_id]
-    async_add_entities([KrisinformationSensor(coordinator)], True)
+    async_add_entities([KrisinformationSensor(config_entry.entry_id, coordinator)], True)
 
 
 class KrisinformationSensor(CoordinatorEntity, SensorEntity):
-    def __init__(self, coordinator):
+    def __init__(self, entry_id: str, coordinator):
         super().__init__(coordinator)
         config = coordinator.config
         municipality = config.get(CONF_MUNICIPALITY, "Hela Sverige")
@@ -37,7 +37,7 @@ class KrisinformationSensor(CoordinatorEntity, SensorEntity):
 
         self._attr_name = f"{base_name} ({municipality})"
 
-        self._attr_unique_id = f"krisinformation_sensor_{sanitized}"
+        self._attr_unique_id = f"krisinformation_sensor_{sanitized}_{entry_id}"
 
         self._municipality = municipality
 
