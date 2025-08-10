@@ -1,12 +1,49 @@
 {
   "config": {
+    "abort": {
+      "reconfigured": "Konfiguration uppdaterad. Integrationen laddades om.",
+      "reconfigure_entry_missing": "Kunde inte hitta posten att konfigurera om."
+    },
     "step": {
       "user": {
         "title": "Krisinformation",
         "description": "Konfigurera Krisinformation-integrationen",
         "data": {
           "name": "Namn",
-          "municipality": "Kommun eller län"
+          "municipality": "Kommun eller län",
+          "language": "Språk",
+          "active_only": "Visa endast aktiva meddelanden",
+          "include_update_cancel": "Visa Update/Cancel i sensorer",
+          "severity_min": "Lägsta allvarlighetsgrad",
+          "api_environment": "API-miljö"
+        }
+      }
+      ,
+      "reconfigure": {
+        "title": "Krisinformation",
+        "description": "Konfigurera Krisinformation-integrationen",
+        "data": {
+          "name": "Namn",
+          "municipality": "Kommun eller län",
+          "language": "Språk",
+          "include_update_cancel": "Visa Update/Cancel i sensorer",
+          "severity_min": "Lägsta allvarlighetsgrad",
+          "api_environment": "API-miljö"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Krisinformation alternativ",
+        "description": "Styr hur meddelanden visas. Händelser för Ny/Update/Cancel skickas alltid för automationer.",
+        "data": {
+          "language": "Språk",
+          "active_only": "Visa endast aktiva meddelanden",
+          "include_update_cancel": "Visa Update/Cancel i sensorer",
+          "severity_min": "Lägsta allvarlighetsgrad",
+          "api_environment": "API-miljö"
         }
       }
     }
