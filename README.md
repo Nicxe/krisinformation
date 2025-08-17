@@ -119,8 +119,7 @@ This automation ensures you are immediately informed about important updates in 
 
 Using the [Krisinformation Alert Card](https://github.com/Nicxe/krisinformation-alert-card) 
 
-<img width="482" height="287" alt="krisinfo_card_screenshoot" src="https://github.com/user-attachments/assets/d3e34e0b-7f8f-4cfc-a881-76396084e885" />
-
+<img width="482" height="287" alt="krisinfo_card_screenshoot" src="https://github.com/user-attachments/assets/4485a1ff-eb26-4235-8ddd-8d1405c0ca44" />
 
 
 ## Contributing
