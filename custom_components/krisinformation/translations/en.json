@@ -1,12 +1,49 @@
 {
   "config": {
+    "abort": {
+      "reconfigured": "Configuration updated. The integration was reloaded.",
+      "reconfigure_entry_missing": "Could not find the entry to reconfigure."
+    },
     "step": {
       "user": {
         "title": "Krisinformation",
         "description": "Configure Krisinformation integration",
         "data": {
           "name": "Name",
-          "municipality": "Municipality or county"
+          "municipality": "Municipality or county",
+          "language": "Language",
+          "active_only": "Only active alerts",
+          "include_update_cancel": "Include Update/Cancel in sensors",
+          "severity_min": "Minimum severity",
+          "api_environment": "API environment"
+        }
+      }
+      ,
+      "reconfigure": {
+        "title": "Krisinformation",
+        "description": "Configure Krisinformation integration",
+        "data": {
+          "name": "Name",
+          "municipality": "Municipality or county",
+          "language": "Language",
+          "include_update_cancel": "Include Update/Cancel in sensors",
+          "severity_min": "Minimum severity",
+          "api_environment": "API environment"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Krisinformation options",
+        "description": "Configure how alerts are shown. Events for New/Update/Cancel are always fired.",
+        "data": {
+          "language": "Language",
+          "active_only": "Only active alerts",
+          "include_update_cancel": "Include Update/Cancel in sensors",
+          "severity_min": "Minimum severity",
+          "api_environment": "API environment"
         }
       }
     }

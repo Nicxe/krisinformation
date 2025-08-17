@@ -1,6 +1,7 @@
 import logging
 from typing import Any, Dict, List
-from homeassistant.components.sensor import SensorEntity
+
+from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -23,15 +24,10 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ):
     coordinator = hass.data[DOMAIN][config_entry.entry_id]
-    async_add_entities(
-        [
-            KrisinformationCountSensor(config_entry.entry_id, coordinator),
-        ],
-        True,
-    )
+    async_add_entities([KrisinformationActiveBinary(config_entry.entry_id, coordinator)], True)
 
 
-class _BaseKrisinformationEntity(CoordinatorEntity, SensorEntity):
+class KrisinformationActiveBinary(CoordinatorEntity, BinarySensorEntity):
     def __init__(self, entry_id: str, coordinator) -> None:
         super().__init__(coordinator)
         config = coordinator.config
@@ -51,6 +47,28 @@ class _BaseKrisinformationEntity(CoordinatorEntity, SensorEntity):
         self._base_name = base_name
         self._sanitized = sanitized
 
+        self._attr_device_class = "safety"
+
+    @property
+    def name(self) -> str:
+        return f"{self._base_name} aktiva VMA ({self._municipality})"
+
+    @property
+    def unique_id(self) -> str:
+        return f"krisinformation_active_{self._sanitized}_{self._entry_id}"
+
+    @property
+    def is_on(self) -> bool:
+        data = self.coordinator.data or {}
+        alerts: List[Dict[str, Any]] = data.get("alerts") or []
+        return len(alerts) > 0
+
+    @property
+    def extra_state_attributes(self):
+        data = self.coordinator.data or {}
+        alerts = data.get("alerts") or []
+        return {"alerts": alerts}
+
     @property
     def device_info(self):
         return {
@@ -61,28 +79,3 @@ class _BaseKrisinformationEntity(CoordinatorEntity, SensorEntity):
         }
 
 
-class KrisinformationCountSensor(_BaseKrisinformationEntity):
-    @property
-    def name(self) -> str:
-        return f"{self._base_name} ({self._municipality})"
-
-    @property
-    def unique_id(self) -> str:
-        # Keep legacy unique_id so existing entity_id is preserved
-        return f"krisinformation_sensor_{self._sanitized}_{self._entry_id}"
-
-    @property
-    def state(self) -> int:
-        data = self.coordinator.data or {}
-        alerts: List[Dict[str, Any]] = data.get("alerts") or []
-        return len(alerts)
-
-    @property
-    def extra_state_attributes(self):
-        data = self.coordinator.data or {}
-        alerts: List[Dict[str, Any]] = data.get("alerts") or []
-        # Expose full CAP list for dashboards/automation templates
-        return {"alerts": alerts}
-
-
-    # Note: The former list sensor has been merged into this count sensor.
