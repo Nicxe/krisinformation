@@ -1,5 +1,6 @@
 {
     "name": "Krisinformation",
-    "country": ["SE"]
+    "country": ["SE"],
+    "zip_release": true,
+    "filename": "krisinformation.zip"
 }
-  
