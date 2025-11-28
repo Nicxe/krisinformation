@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import json
+from importlib import resources
+
 DOMAIN = "krisinformation"
 
 # Config/Options keys
@@ -36,7 +39,21 @@ TEST_BASE_URL = "https://vmaapi.sr.se/testapi/v3/alerts"
 
 # HTTP
 DEFAULT_TIMEOUT_SECONDS = 10
-USER_AGENT = "HomeAssistant-Krisinformation/1.1 (+https://www.home-assistant.io/)"
+USER_AGENT_PRODUCT = "HomeAssistantKrisinformation"
+
+
+def _load_manifest_version() -> str:
+    """Return the integration version defined in manifest.json."""
+    try:
+        manifest_path = resources.files(__package__).joinpath("manifest.json")
+        manifest_raw = manifest_path.read_text(encoding="utf-8")
+        manifest = json.loads(manifest_raw)
+    except (FileNotFoundError, json.JSONDecodeError, AttributeError, OSError):
+        return "0.0.0"
+    return manifest.get("version", "0.0.0")
+
+
+INTEGRATION_VERSION = _load_manifest_version()
 
 # Events
 EVENT_NEW_ALERT = f"{DOMAIN}_new_alert"

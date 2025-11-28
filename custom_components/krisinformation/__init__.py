@@ -4,40 +4,42 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import async_timeout
 from aiohttp import ClientError
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import __version__ as HA_VERSION
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
 
 from .const import (
-    DOMAIN,
-    CONF_MUNICIPALITY,
-    MUNICIPALITY_DEFAULT,
-    COUNTY_MAPPING,
-    MUNICIPALITY_MAPPING,
-    CONF_API_ENV,
+    ACTIVE_ONLY_DEFAULT,
     API_ENV_PRODUCTION,
     API_ENV_TEST,
-    PRODUCTION_BASE_URL,
-    TEST_BASE_URL,
-    DEFAULT_TIMEOUT_SECONDS,
-    USER_AGENT,
-    CONF_LANGUAGE,
-    LANGUAGE_DEFAULT,
     CONF_ACTIVE_ONLY,
-    ACTIVE_ONLY_DEFAULT,
+    CONF_API_ENV,
     CONF_INCLUDE_UPDATE_CANCEL,
-    INCLUDE_UPDATE_CANCEL_DEFAULT,
+    CONF_LANGUAGE,
+    CONF_MUNICIPALITY,
     CONF_SEVERITY_MIN,
-    SEVERITY_MIN_DEFAULT,
-    SEVERITY_ORDER,
+    CONF_UPDATE_INTERVAL,
+    COUNTY_MAPPING,
+    DEFAULT_TIMEOUT_SECONDS,
+    DOMAIN,
+    EVENT_CANCELED_ALERT,
     EVENT_NEW_ALERT,
     EVENT_UPDATED_ALERT,
-    EVENT_CANCELED_ALERT,
-    CONF_UPDATE_INTERVAL,
+    INCLUDE_UPDATE_CANCEL_DEFAULT,
+    INTEGRATION_VERSION,
+    LANGUAGE_DEFAULT,
+    MUNICIPALITY_DEFAULT,
+    MUNICIPALITY_MAPPING,
+    PRODUCTION_BASE_URL,
+    SEVERITY_MIN_DEFAULT,
+    SEVERITY_ORDER,
+    TEST_BASE_URL,
     UPDATE_INTERVAL_DEFAULT_SECONDS,
+    USER_AGENT_PRODUCT,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -144,6 +146,8 @@ class KrisinformationDataUpdateCoordinator(DataUpdateCoordinator):
         self._identifier_to_msgtype: Dict[str, str] = {}
         self._last_alert_sent: Optional[str] = None
 
+        self._user_agent = self._compose_user_agent()
+
         # Respect configured polling interval at startup
         # Use dynamic interval based on server cache-control; no user setting
 
@@ -178,8 +182,16 @@ class KrisinformationDataUpdateCoordinator(DataUpdateCoordinator):
             params["since"] = self._since_iso
         return url, params
 
+    def _compose_user_agent(self) -> str:
+        integration_version = INTEGRATION_VERSION or "0.0.0"
+        ha_version = HA_VERSION or "unknown"
+        ua = f"{USER_AGENT_PRODUCT}/{integration_version}"
+        if ha_version:
+            ua = f"{ua} HomeAssistant/{ha_version}"
+        return ua
+
     def _build_headers(self) -> Dict[str, str]:
-        headers = {"User-Agent": USER_AGENT, "Accept": "application/json"}
+        headers = {"User-Agent": self._user_agent, "Accept": "application/json"}
         if self._etag:
             headers["If-None-Match"] = self._etag
         if self._last_modified:
