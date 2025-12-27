@@ -3,6 +3,7 @@
 ![hacs_badge](https://img.shields.io/badge/HACS-Default-41BDF5.svg?style=)
 <img alt="Maintenance" src="https://img.shields.io/maintenance/yes/2025"> <img alt="GitHub last commit" src="https://img.shields.io/github/last-commit/Nicxe/krisinformation"><br><br>
 <img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/Nicxe/krisinformation">
+![GitHub Downloads (all assets, latest release)](https://img.shields.io/github/downloads/nicxe/krisinformation/latest/total)
 
 ## Overview
 
