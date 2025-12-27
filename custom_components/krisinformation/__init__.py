@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 import async_timeout
+import re
 from aiohttp import ClientError
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import __version__ as HA_VERSION
@@ -46,6 +47,26 @@ _LOGGER = logging.getLogger(__name__)
 DEFAULT_UPDATE_INTERVAL = 300  # 5 minuter
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+
+_RE_WHITESPACE = re.compile(r"\s+")
+
+
+def _sanitize_text(value: Optional[str]) -> Optional[str]:
+    """Normalize text from SR VMA API (CRLF/newlines/odd whitespace)."""
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        # Defensive: keep non-string as-is rather than crashing
+        return value  # type: ignore[return-value]
+
+    # Normalize newlines: CRLF/CR -> LF
+    text = value.replace("\r\n", "\n").replace("\r", "\n")
+
+    # Normalize any whitespace (spaces, tabs, newlines) into a single space
+    # This avoids odd-looking multiline rendering in HA attributes.
+    text = _RE_WHITESPACE.sub(" ", text)
+    return text.strip()
+
 
 def _get_geocode(selected: Optional[str]) -> str:
     if not selected or selected == "Hela Sverige":
@@ -294,9 +315,9 @@ class KrisinformationDataUpdateCoordinator(DataUpdateCoordinator):
                         "effective": info_obj.get("effective") if info_obj else None,
                         "onset": info_obj.get("onset") if info_obj else None,
                         "expires": info_obj.get("expires") if info_obj else None,
-                        "headline": info_obj.get("headline") if info_obj else None,
-                        "description": info_obj.get("description") if info_obj else None,
-                        "instruction": info_obj.get("instruction") if info_obj else None,
+                        "headline": _sanitize_text(info_obj.get("headline")) if info_obj else None,
+                        "description": _sanitize_text(info_obj.get("description")) if info_obj else None,
+                        "instruction": _sanitize_text(info_obj.get("instruction")) if info_obj else None,
                         "contact": info_obj.get("contact") if info_obj else None,
                         "web": info_obj.get("web") if info_obj else None,
                         "area": area_list or [],
