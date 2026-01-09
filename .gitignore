@@ -1,2 +1,4 @@
 .DS_Store
 custom_components/krisinformation/releasenote.md
+node_modules/
+npm-debug.log*
