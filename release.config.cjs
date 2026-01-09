@@ -126,7 +126,7 @@ module.exports = {
       "@semantic-release/exec",
       {
         prepareCmd:
-          "jq '.version = \"${nextRelease.version}\"' custom_components/krisinformation/manifest.json > manifest.tmp && mv manifest.tmp custom_components/krisinformation/manifest.json && cd custom_components && zip -r krisinformation.zip krisinformation",
+          "node .release/update-manifest-version.js --file custom_components/krisinformation/manifest.json --version \"${nextRelease.version}\" && (cd custom_components/krisinformation && rm -f ../krisinformation.zip && zip -r ../krisinformation.zip . -x \"__pycache__/*\" \"*.pyc\" \".DS_Store\" \".pycacheprefix/*\" \".pytest_cache/*\" \".mypy_cache/*\")",
 
         // After a successful release, comment on issues referenced via "Fixes #123" etc
         // in commits included in this release. GitHub will still close issues automatically
