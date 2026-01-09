@@ -1,0 +1,11 @@
+{
+  "private": true,
+  "devDependencies": {
+    "@semantic-release/commit-analyzer": "^12.0.0",
+    "@semantic-release/exec": "^6.0.3",
+    "@semantic-release/github": "^10.3.5",
+    "@semantic-release/release-notes-generator": "^13.0.0",
+    "conventional-changelog-conventionalcommits": "^8.0.0",
+    "semantic-release": "^23.1.1"
+  }
+}
