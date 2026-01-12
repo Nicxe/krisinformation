@@ -2,7 +2,9 @@ name: HACS Action
 
 on:
   push:
+    branches: [dev]
   pull_request:
+    branches: [beta, main]
   schedule:
     - cron: "0 0 * * *"
 
