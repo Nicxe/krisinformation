@@ -15,7 +15,6 @@ There is also a dashboard card specifically for this integration, which can be f
 
 
 
-
 ## Installation
 
 You can install this integration as a custom repository by following one of these guides:
