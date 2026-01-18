@@ -4,3 +4,6 @@ node_modules/
 npm-debug.log*
 custom_components/krisinformation.zip
 /.npm-cache
+custom_components/krisinformation/pytest.ini
+custom_components/krisinformation/requirements_test.txt
+/custom_components/krisinformation/tests

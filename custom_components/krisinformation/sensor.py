@@ -1,6 +1,6 @@
 import logging
 from typing import Any, Dict, List
-from homeassistant.components.sensor import SensorEntity
+from homeassistant.components.sensor import SensorEntity, SensorStateClass
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -62,6 +62,8 @@ class _BaseKrisinformationEntity(CoordinatorEntity, SensorEntity):
 
 
 class KrisinformationCountSensor(_BaseKrisinformationEntity):
+    _attr_state_class = SensorStateClass.MEASUREMENT
+
     @property
     def name(self) -> str:
         return f"{self._base_name} ({self._municipality})"

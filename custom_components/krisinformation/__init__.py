@@ -1,10 +1,11 @@
+import asyncio
 import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 import async_timeout
 import re
-from aiohttp import ClientError
+from aiohttp import ClientError, ClientResponseError
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import __version__ as HA_VERSION
 from homeassistant.core import HomeAssistant
@@ -169,8 +170,8 @@ class KrisinformationDataUpdateCoordinator(DataUpdateCoordinator):
 
         self._user_agent = self._compose_user_agent()
 
-        # Respect configured polling interval at startup
-        # Use dynamic interval based on server cache-control; no user setting
+        # Store default interval for backoff recovery
+        self._default_update_interval = update_interval
 
     def _get_effective_option(self, key: str, default: Any) -> Any:
         # Prefer options; fallback to original data for first-time setup values
@@ -232,9 +233,19 @@ class KrisinformationDataUpdateCoordinator(DataUpdateCoordinator):
 
                     if response.status == 429:
                         retry_after = response.headers.get("Retry-After")
-                        _LOGGER.warning("429 Too Many Requests from VMA API, Retry-After=%s", retry_after)
-                        # Backoff: temporarily increase interval
-                        self.update_interval = timedelta(seconds=min(900, self.update_interval.total_seconds() * 2))
+                        _LOGGER.warning(
+                            "429 Too Many Requests from VMA API, Retry-After=%s",
+                            retry_after,
+                        )
+                        # Use Retry-After if provided, otherwise exponential backoff
+                        if retry_after:
+                            try:
+                                wait_seconds = int(retry_after)
+                            except ValueError:
+                                wait_seconds = self.update_interval.total_seconds() * 2
+                        else:
+                            wait_seconds = self.update_interval.total_seconds() * 2
+                        self.update_interval = timedelta(seconds=min(900, wait_seconds))
                         return self.data or {}
 
                     response.raise_for_status()
@@ -252,10 +263,31 @@ class KrisinformationDataUpdateCoordinator(DataUpdateCoordinator):
                             self.update_interval = timedelta(seconds=max(60, min(600, max_age)))
                         except Exception:  # noqa: BLE001
                             pass
+                    elif self.update_interval > self._default_update_interval:
+                        # Gradually recover from backoff after successful request
+                        recovered_seconds = max(
+                            self._default_update_interval.total_seconds(),
+                            self.update_interval.total_seconds() / 2,
+                        )
+                        self.update_interval = timedelta(seconds=recovered_seconds)
+                        _LOGGER.debug(
+                            "Recovering from backoff, interval now %s seconds",
+                            recovered_seconds,
+                        )
 
                     data = await response.json()
-        except (ClientError, Exception) as err:  # noqa: BLE001
-            raise UpdateFailed(f"Fel vid hämtning från SR:s API: {err}") from err
+        except asyncio.TimeoutError as err:
+            _LOGGER.warning("Timeout vid anrop till VMA API (tidsgräns %ss)", DEFAULT_TIMEOUT_SECONDS)
+            raise UpdateFailed("API-anrop tog för lång tid") from err
+        except ClientResponseError as err:
+            _LOGGER.warning("HTTP-fel %s vid anrop till VMA API: %s", err.status, err.message)
+            raise UpdateFailed(f"HTTP-fel {err.status}: {err.message}") from err
+        except ClientError as err:
+            _LOGGER.warning("Nätverksfel vid anrop till VMA API: %s", err)
+            raise UpdateFailed(f"Nätverksfel: {err}") from err
+        except Exception as err:  # noqa: BLE001
+            _LOGGER.exception("Oväntat fel vid anrop till VMA API")
+            raise UpdateFailed(f"Oväntat fel: {err}") from err
 
         # Normalize and filter
         language = self._get_language()
