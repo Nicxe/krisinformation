@@ -14,8 +14,6 @@ There is also a dashboard card specifically for this integration, which can be f
 <a href="https://buymeacoffee.com/niklasv" target="_blank"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee" style="height: auto !important;width: auto !important;" ></a>
 
 
-
-
 ## Installation
 
 You can install this integration as a custom repository by following one of these guides:

@@ -1,7 +1,10 @@
 import logging
 from typing import Any, Dict, List
 
-from homeassistant.components.binary_sensor import BinarySensorEntity
+from homeassistant.components.binary_sensor import (
+    BinarySensorDeviceClass,
+    BinarySensorEntity,
+)
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -47,7 +50,7 @@ class KrisinformationActiveBinary(CoordinatorEntity, BinarySensorEntity):
         self._base_name = base_name
         self._sanitized = sanitized
 
-        self._attr_device_class = "safety"
+        self._attr_device_class = BinarySensorDeviceClass.SAFETY
 
     @property
     def name(self) -> str:
