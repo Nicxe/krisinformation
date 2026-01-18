@@ -8,5 +8,8 @@
     "@semantic-release/release-notes-generator": "^14.0.0",
     "conventional-changelog-conventionalcommits": "^9.0.0",
     "semantic-release": "^25.0.2"
+  },
+  "overrides": {
+    "tar": "^7.5.3"
   }
 }
