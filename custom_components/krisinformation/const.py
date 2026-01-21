@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 from importlib import resources
 
+from .municipalities import COUNTY_MAPPING, MUNICIPALITY_MAPPING, MUNICIPALITY_OPTIONS
+
 DOMAIN = "krisinformation"
 
 # Config/Options keys
@@ -67,9 +69,8 @@ DEVICE_MODEL = "VMA v3 API"
 # Severity ordering for filtering/aggregation
 SEVERITY_ORDER = ["Minor", "Moderate", "Severe", "Extreme"]
 
-from .municipalities import (
-    COUNTY_MAPPING,
-    MUNICIPALITY_MAPPING,
-    MUNICIPALITY_OPTIONS,
-)
-
+__all__ = [
+    "COUNTY_MAPPING",
+    "MUNICIPALITY_MAPPING",
+    "MUNICIPALITY_OPTIONS",
+]

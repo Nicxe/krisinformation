@@ -27,5 +27,3 @@ async def async_get_config_entry_diagnostics(
         },
         "data": async_redact_data(data, TO_REDACT),
     }
-
-

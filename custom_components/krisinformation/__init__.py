@@ -89,7 +89,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     await coordinator.async_config_entry_first_refresh()
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
 
-    await hass.config_entries.async_forward_entry_setups(entry, ["sensor", "binary_sensor"])
+    await hass.config_entries.async_forward_entry_setups(
+        entry, ["sensor", "binary_sensor"]
+    )
 
     async def _options_update_listener(hass: HomeAssistant, updated_entry: ConfigEntry):
         await hass.config_entries.async_reload(updated_entry.entry_id)
@@ -99,7 +101,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
-    unload_ok = await hass.config_entries.async_unload_platforms(entry, ["sensor", "binary_sensor"])
+    unload_ok = await hass.config_entries.async_unload_platforms(
+        entry, ["sensor", "binary_sensor"]
+    )
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id)
     return unload_ok
@@ -188,7 +192,9 @@ class KrisinformationDataUpdateCoordinator(DataUpdateCoordinator):
             "include_update_cancel": self._get_effective_option(
                 CONF_INCLUDE_UPDATE_CANCEL, INCLUDE_UPDATE_CANCEL_DEFAULT
             ),
-            "severity_min": self._get_effective_option(CONF_SEVERITY_MIN, SEVERITY_MIN_DEFAULT),
+            "severity_min": self._get_effective_option(
+                CONF_SEVERITY_MIN, SEVERITY_MIN_DEFAULT
+            ),
         }
 
     def _compose_url_and_params(self) -> Tuple[str, Dict[str, str]]:
@@ -225,7 +231,9 @@ class KrisinformationDataUpdateCoordinator(DataUpdateCoordinator):
         headers = self._build_headers()
         try:
             async with async_timeout.timeout(DEFAULT_TIMEOUT_SECONDS):
-                async with self.session.get(url, params=params, headers=headers) as response:
+                async with self.session.get(
+                    url, params=params, headers=headers
+                ) as response:
                     if response.status == 304:
                         # Not modified: return previous data
                         _LOGGER.debug("304 Not Modified from VMA API")
@@ -252,15 +260,21 @@ class KrisinformationDataUpdateCoordinator(DataUpdateCoordinator):
 
                     # Capture caching headers
                     self._etag = response.headers.get("ETag") or self._etag
-                    self._last_modified = response.headers.get("Last-Modified") or self._last_modified
+                    self._last_modified = (
+                        response.headers.get("Last-Modified") or self._last_modified
+                    )
                     cache_control = response.headers.get("Cache-Control", "")
 
                     # Adjust polling interval if max-age present
                     if "max-age=" in cache_control:
                         try:
-                            max_age = int(cache_control.split("max-age=")[1].split(",")[0])
+                            max_age = int(
+                                cache_control.split("max-age=")[1].split(",")[0]
+                            )
                             # Keep sensible bounds
-                            self.update_interval = timedelta(seconds=max(60, min(600, max_age)))
+                            self.update_interval = timedelta(
+                                seconds=max(60, min(600, max_age))
+                            )
                         except Exception:  # noqa: BLE001
                             pass
                     elif self.update_interval > self._default_update_interval:
@@ -277,10 +291,15 @@ class KrisinformationDataUpdateCoordinator(DataUpdateCoordinator):
 
                     data = await response.json()
         except asyncio.TimeoutError as err:
-            _LOGGER.warning("Timeout vid anrop till VMA API (tidsgräns %ss)", DEFAULT_TIMEOUT_SECONDS)
+            _LOGGER.warning(
+                "Timeout vid anrop till VMA API (tidsgräns %ss)",
+                DEFAULT_TIMEOUT_SECONDS,
+            )
             raise UpdateFailed("API-anrop tog för lång tid") from err
         except ClientResponseError as err:
-            _LOGGER.warning("HTTP-fel %s vid anrop till VMA API: %s", err.status, err.message)
+            _LOGGER.warning(
+                "HTTP-fel %s vid anrop till VMA API: %s", err.status, err.message
+            )
             raise UpdateFailed(f"HTTP-fel {err.status}: {err.message}") from err
         except ClientError as err:
             _LOGGER.warning("Nätverksfel vid anrop till VMA API: %s", err)
@@ -298,7 +317,9 @@ class KrisinformationDataUpdateCoordinator(DataUpdateCoordinator):
         # Emit events comparing with last state (always, regardless of sensor filters)
         self._emit_events(previous=self._identifier_to_msgtype, current=normalized)
         # Update internal map for next diff
-        self._identifier_to_msgtype = {a["identifier"]: a.get("msgType", "") for a in normalized}
+        self._identifier_to_msgtype = {
+            a["identifier"]: a.get("msgType", "") for a in normalized
+        }
 
         # Advance since cursor using latest sent
         latest_sent = self._extract_latest_sent_iso(normalized)
@@ -308,7 +329,9 @@ class KrisinformationDataUpdateCoordinator(DataUpdateCoordinator):
 
         return {"alerts": active_alerts}
 
-    def _normalize_data(self, raw: Dict[str, Any], language: str) -> List[Dict[str, Any]]:
+    def _normalize_data(
+        self, raw: Dict[str, Any], language: str
+    ) -> List[Dict[str, Any]]:
         alerts = raw.get("alerts") or []
         normalized: List[Dict[str, Any]] = []
         for alert in alerts:
@@ -340,16 +363,24 @@ class KrisinformationDataUpdateCoordinator(DataUpdateCoordinator):
                         "language": info_obj.get("language") if info_obj else None,
                         "category": info_obj.get("category") if info_obj else None,
                         "event": info_obj.get("event") if info_obj else None,
-                        "responseType": info_obj.get("responseType") if info_obj else None,
+                        "responseType": info_obj.get("responseType")
+                        if info_obj
+                        else None,
                         "urgency": info_obj.get("urgency") if info_obj else None,
                         "severity": info_obj.get("severity") if info_obj else None,
                         "certainty": info_obj.get("certainty") if info_obj else None,
                         "effective": info_obj.get("effective") if info_obj else None,
                         "onset": info_obj.get("onset") if info_obj else None,
                         "expires": info_obj.get("expires") if info_obj else None,
-                        "headline": _sanitize_text(info_obj.get("headline")) if info_obj else None,
-                        "description": _sanitize_text(info_obj.get("description")) if info_obj else None,
-                        "instruction": _sanitize_text(info_obj.get("instruction")) if info_obj else None,
+                        "headline": _sanitize_text(info_obj.get("headline"))
+                        if info_obj
+                        else None,
+                        "description": _sanitize_text(info_obj.get("description"))
+                        if info_obj
+                        else None,
+                        "instruction": _sanitize_text(info_obj.get("instruction"))
+                        if info_obj
+                        else None,
                         "contact": info_obj.get("contact") if info_obj else None,
                         "web": info_obj.get("web") if info_obj else None,
                         "area": area_list or [],
@@ -359,22 +390,40 @@ class KrisinformationDataUpdateCoordinator(DataUpdateCoordinator):
             )
         return normalized
 
-    def _apply_filters(self, alerts: List[Dict[str, Any]], filters: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _apply_filters(
+        self, alerts: List[Dict[str, Any]], filters: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
         active_only: bool = filters.get("active_only", True)
         include_update_cancel: bool = filters.get("include_update_cancel", False)
         severity_min: str = filters.get("severity_min", SEVERITY_MIN_DEFAULT)
-        min_index = SEVERITY_ORDER.index(severity_min) if severity_min in SEVERITY_ORDER else 0
+        min_index = (
+            SEVERITY_ORDER.index(severity_min) if severity_min in SEVERITY_ORDER else 0
+        )
 
         def is_active(a: Dict[str, Any]) -> bool:
             info = a.get("info") or {}
             now = dt_util.utcnow()
             try:
-                exp = self._parse_iso(info.get("expires")) if info.get("expires") else None
-                eff = self._parse_iso(info.get("effective")) if info.get("effective") else None
-                onset = self._parse_iso(info.get("onset")) if info.get("onset") else None
+                exp = (
+                    self._parse_iso(info.get("expires"))
+                    if info.get("expires")
+                    else None
+                )
+                eff = (
+                    self._parse_iso(info.get("effective"))
+                    if info.get("effective")
+                    else None
+                )
+                onset = (
+                    self._parse_iso(info.get("onset")) if info.get("onset") else None
+                )
             except Exception:  # noqa: BLE001
                 exp = eff = onset = None
-            start = eff or onset or self._parse_iso(a.get("sent")) if a.get("sent") else None
+            start = (
+                eff or onset or self._parse_iso(a.get("sent"))
+                if a.get("sent")
+                else None
+            )
             if exp and now >= exp:
                 return False
             if start and now < start:
