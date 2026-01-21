@@ -27,7 +27,6 @@ async def async_setup_entry(
         [
             KrisinformationCountSensor(config_entry.entry_id, coordinator),
         ],
-        True,
     )
 
 
@@ -85,6 +84,5 @@ class KrisinformationCountSensor(_BaseKrisinformationEntity):
         alerts: List[Dict[str, Any]] = data.get("alerts") or []
         # Expose full CAP list for dashboards/automation templates
         return {"alerts": alerts}
-
 
     # Note: The former list sensor has been merged into this count sensor.

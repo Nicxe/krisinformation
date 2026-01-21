@@ -325,10 +325,5 @@ MUNICIPALITY_MAPPING = {
 # En sammanslagen lista att välja från i ConfigFlow,
 # bestående av 'Hela Sverige', alla län + alla kommuner
 MUNICIPALITY_OPTIONS = (
-    ["Hela Sverige"]
-    + list(COUNTY_MAPPING.keys())
-    + list(MUNICIPALITY_MAPPING.keys())
+    ["Hela Sverige"] + list(COUNTY_MAPPING.keys()) + list(MUNICIPALITY_MAPPING.keys())
 )
-
-
-
