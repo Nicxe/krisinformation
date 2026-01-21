@@ -27,7 +27,9 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ):
     coordinator = hass.data[DOMAIN][config_entry.entry_id]
-    async_add_entities([KrisinformationActiveBinary(config_entry.entry_id, coordinator)], True)
+    async_add_entities(
+        [KrisinformationActiveBinary(config_entry.entry_id, coordinator)]
+    )
 
 
 class KrisinformationActiveBinary(CoordinatorEntity, BinarySensorEntity):
@@ -80,5 +82,3 @@ class KrisinformationActiveBinary(CoordinatorEntity, BinarySensorEntity):
             "model": DEVICE_MODEL,
             "name": f"Krisinformation ({self._municipality})",
         }
-
-
