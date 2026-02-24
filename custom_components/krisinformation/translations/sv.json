@@ -30,6 +30,10 @@
           "severity_min": "Lägsta allvarlighetsgrad",
           "api_environment": "API-miljö"
         }
+      },
+      "reload_notice": {
+        "title": "Krisinformation",
+        "description": "Installationen är klar. Klicka på skicka för att slutföra. Efter installationen, ladda om webbläsarsidan en gång så att dashboard-kortet blir tillgängligt direkt."
       }
     }
   },
@@ -56,4 +60,3 @@
     }
   }
 }
-
