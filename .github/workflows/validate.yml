@@ -20,3 +20,18 @@ jobs:
       hacs_category: "integration"
       run_hassfest: true
     secrets: inherit
+
+  check_card_syntax:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
+      - name: Check card syntax
+        run: node --experimental-default-type=module --check custom_components/krisinformation/www/krisinformation-alert-card.js

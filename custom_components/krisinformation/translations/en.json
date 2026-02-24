@@ -30,6 +30,10 @@
           "severity_min": "Minimum severity",
           "api_environment": "API environment"
         }
+      },
+      "reload_notice": {
+        "title": "Krisinformation",
+        "description": "Setup is complete. Click submit to finish. After setup, reload the browser page once to make sure the dashboard card is available immediately."
       }
     }
   },
@@ -56,4 +60,3 @@
     }
   }
 }
-

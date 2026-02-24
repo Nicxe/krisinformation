@@ -76,6 +76,32 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 3
 
+    def __init__(self) -> None:
+        self._pending_entry_title: str | None = None
+        self._pending_entry_data: dict | None = None
+
+    def _show_reload_notice_step(self, *, title: str, data: dict):
+        """Store entry payload and show final reload notice step."""
+        self._pending_entry_title = title
+        self._pending_entry_data = data
+        return self.async_show_form(step_id="reload_notice", data_schema=vol.Schema({}))
+
+    async def async_step_reload_notice(self, user_input=None):
+        """Final confirmation step before creating entry."""
+        if user_input is None:
+            return self.async_show_form(
+                step_id="reload_notice", data_schema=vol.Schema({})
+            )
+
+        if self._pending_entry_title is None or self._pending_entry_data is None:
+            return self.async_abort(reason="reconfigure_entry_missing")
+
+        title = self._pending_entry_title
+        data = self._pending_entry_data
+        self._pending_entry_title = None
+        self._pending_entry_data = None
+        return self.async_create_entry(title=title, data=data)
+
     async def async_step_user(self, user_input=None):
         if user_input is not None:
             municipality = user_input[CONF_MUNICIPALITY]
@@ -94,7 +120,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 ),
                 CONF_API_ENV: user_input.get(CONF_API_ENV, API_ENV_PRODUCTION),
             }
-            return self.async_create_entry(title=title, data=data)
+            return self._show_reload_notice_step(title=title, data=data)
 
         return self.async_show_form(step_id="user", data_schema=DATA_SCHEMA)
 
