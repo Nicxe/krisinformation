@@ -1,4 +1,4 @@
-# Krisinformation integration
+# Krisinformation
 
 ![hacs_badge](https://img.shields.io/badge/HACS-Default-41BDF5.svg?style=)
 <img alt="Maintenance" src="https://img.shields.io/maintenance/yes/2025"> <img alt="GitHub last commit" src="https://img.shields.io/github/last-commit/Nicxe/krisinformation"><br><br>
@@ -7,122 +7,103 @@
 
 ## Overview
 
-Krisinformation integration is a custom component for Home Assistant that retrieves crisis alerts (VMA) from [Sveriges Radio's API for Important Public Announcements](https://vmaapi.sr.se/index.html?urls.primaryName=v3.0-beta). It allows you to filter alerts by municipalities, county or Sweden to view all alerts for the entire country.
+Krisinformation is a custom Home Assistant integration that fetches VMA alerts from [Sveriges Radio](https://vmaapi.sr.se/index.html?urls.primaryName=v3.0-beta).
 
-There is also a dashboard card specifically for this integration, which can be found here: [Krisinformation Alert Card](https://github.com/Nicxe/krisinformation-alert-card).
+This repository now contains both:
+- the Home Assistant integration (`krisinformation`)
+- the Lovelace alert card (`krisinformation-alert-card.js`)
 
 <a href="https://buymeacoffee.com/niklasv" target="_blank"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee" style="height: auto !important;width: auto !important;" ></a>
 
-
 ## Installation
 
-You can install this integration as a custom repository by following one of these guides:
-
-### With HACS (Recommended)
-
-To install the custom component using HACS:
+### Integration with HACS (recommended)
 
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Nicxe&repository=krisinformation&category=integration)
 
-or
-1. Install HACS if you don't have it already
-2. Open HACS in Home Assistant
-3. Search for "Krisinformation"
-4. Click the download button. ⬇️
+You can also add `https://github.com/Nicxe/krisinformation` manually in HACS as type **Integration**.
 
-<details>
-<summary>Without HACS</summary>
+### Integration without HACS
 
-1. Download the latest release of the Krisinformation integration from **[GitHub Releases](https://github.com/Nicxe/krisinformation/releases)**.
-2. Extract the downloaded files and place the `krisinformation` folder in your Home Assistant `custom_components` directory (usually located in the `config/custom_components` directory).
-3. Restart your Home Assistant instance to load the new integration.
+1. Download `krisinformation.zip` from the [latest release](https://github.com/Nicxe/krisinformation/releases).
+2. Extract the archive and place the `krisinformation` folder in `config/custom_components/`.
+3. Restart Home Assistant.
 
-</details>
+### Alert card installation
 
+The alert card is bundled with this integration.
+
+When the integration starts, it automatically:
+- syncs the bundled card to `config/www/krisinformation-alert-card.js`
+- creates or updates a Lovelace `module` resource at `/local/krisinformation-alert-card.js?v=...` for cache-busting
+
+If you have just installed or updated, reload the browser once to ensure the latest card resource is loaded.
+
+## Card usage
+
+1. Open your dashboard.
+2. Select **Edit dashboard**.
+3. Add a new card.
+4. Choose **Custom: Krisinformation Alert Card**.
+
+Manual card type:
+- `custom:krisinformation-alert-card`
+
+### Manual fallback (if needed)
+
+Normally no manual Lovelace resource setup is required.
+
+If your dashboard does not load the card automatically, add this resource manually:
+- URL: `/local/krisinformation-alert-card.js`
+- Type: `JavaScript Module`
 
 ## Configuration
 
-To add the integration to your Home Assistant instance, use the button below:
+To add the integration, use this button:
 
 <p>
-    <a href="https://my.home-assistant.io/redirect/config_flow_start?domain=krisinformation" class="my badge" target="_blank">
-        <img src="https://my.home-assistant.io/badges/config_flow_start.svg">
-    </a>
+  <a href="https://my.home-assistant.io/redirect/config_flow_start?domain=krisinformation" class="my badge" target="_blank">
+    <img src="https://my.home-assistant.io/badges/config_flow_start.svg" alt="Add Krisinformation to Home Assistant">
+  </a>
 </p>
 
+If needed, add it manually via **Settings > Devices & Services > Add Integration**.
 
-> [!TIP]
-> You can easily set up multiple sensors for different locations by clicking Add Entry on the Krisinformation integration page in Home Assistant. No YAML configuration is required, and each sensor can have its own unique setup.
+## Example: Notification from first alert
 
-
-### Manual Configuration
-
-If the button above does not work, you can also perform the following steps manually:
-
-1. Browse to your Home Assistant instance.
-2. Go to **Settings > Devices & Services**.
-3. In the bottom right corner, select the **Add Integration** button.
-4. From the list, select **Krisinformation**.
-5. Follow the on-screen instructions to complete the setup.
-
-
-
-
-
-## Example: Sending Notifications with Alerts
-
-This example demonstrates how to use the sensor.krisinformation_norrbotten to send a notification containing the Headline and PushMessage from the first alert in the sensor’s alerts attribute.
-
-### Jinja2 Template for Notification
-
-The following Jinja2 template extracts the Headline and PushMessage from the sensor’s alerts attribute:
-
-```
-
+```jinja2
 {% set alert = state_attr('sensor.krisinformation_hela_sverige', 'alerts')[0] %}
 {{ alert['event'] }}: {{ alert['description'] }}
 ```
 
-### Example Automation
-
-To send this as a notification via Home Assistant, you can use the following automation configuration:
-
-```
+```yaml
 automation:
   - alias: "Krisinformation Alert Notification"
     trigger:
       - platform: state
         entity_id: sensor.krisinformation_hela_sverige
-    condition: []
     action:
       - service: notify.mobile_app_your_phone
         data:
-          title: "{{ state_attr('sensor.krisinformation_hela_sverige', 'alerts')[0]['alerts'] }}"
+          title: "{{ state_attr('sensor.krisinformation_hela_sverige', 'alerts')[0]['event'] }}"
           message: "{{ state_attr('sensor.krisinformation_hela_sverige', 'alerts')[0]['description'] }}"
 ```
 
-**Explanation:**
-* Trigger: The automation is triggered whenever the state of sensor.krisinformation_norrbotten changes.
-* Action: The notify service sends a notification with:
-    * Title: The Headline from the first alert in the alerts attribute.
-    * Message: The PushMessage from the same alert.
+## Release assets and versioning
 
-This automation ensures you are immediately informed about important updates in the sensor.
+Each GitHub release in this repository publishes:
+- `krisinformation.zip` for integration installation
 
-> [!NOTE]
-> Replace mobile_app_your_phone with the name of your mobile app notification service. If the alerts attribute contains multiple alerts and you want to handle them differently, you can modify the template to iterate over the list or select specific items.
+The bundled alert card is included inside `krisinformation.zip`.
 
+## Migration from the old card repository
 
+If you previously used `Nicxe/krisinformation-alert-card`, see [MIGRATION.md](./MIGRATION.md).
 
-## Usage Screenshots
-
-Using the [Krisinformation Alert Card](https://github.com/Nicxe/krisinformation-alert-card) 
+## Usage screenshots
 
 <img width="482" height="287" alt="krisinfo_card_screenshoot" src="https://github.com/user-attachments/assets/4485a1ff-eb26-4235-8ddd-8d1405c0ca44" />
 
-
 ## Contributing
 
-Contributions, bug reports, and feedback are welcome. Please feel free to open issues or pull requests on GitHub.
-
-
+Contributions, bug reports, and feedback are welcome. Please open issues or pull requests on GitHub.
