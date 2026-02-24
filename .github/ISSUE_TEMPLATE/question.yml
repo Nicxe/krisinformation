@@ -1,0 +1,29 @@
+name: ❓ Question
+description: Ask a question about Krisinformation (integration or card)
+labels: ["question"]
+body:
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: What is your question about?
+      options:
+        - Integration
+        - Card
+        - Both
+    validations:
+      required: true
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Your Question
+      description: Describe what you need help with.
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Share relevant details, configuration, and what you already tried.
