@@ -6,4 +6,7 @@ custom_components/krisinformation.zip
 /.npm-cache
 custom_components/krisinformation/pytest.ini
 custom_components/krisinformation/requirements_test.txt
-/custom_components/krisinformation/tests
+__pycache__/
+*.py[cod]
+/custom_components/krisinformation/tests/*
+!/custom_components/krisinformation/tests/test_frontend_resources.py
