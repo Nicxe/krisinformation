@@ -14,6 +14,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
 
+from .frontend import async_setup_frontend
 from .const import (
     ACTIVE_ONLY_DEFAULT,
     API_ENV_PRODUCTION,
@@ -78,6 +79,7 @@ def _get_geocode(selected: Optional[str]) -> str:
 
 
 async def async_setup(hass, config):
+    await async_setup_frontend(hass)
     return True
 
 
