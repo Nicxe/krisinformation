@@ -1,6 +1,7 @@
 {
   "domain": "krisinformation",
   "name": "Krisinformation",
+  "after_dependencies": ["lovelace"],
   "codeowners": ["@Nicxe"],
   "config_flow": true,
   "documentation": "https://github.com/Nicxe/krisinformation",

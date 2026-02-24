@@ -9,6 +9,15 @@ from .municipalities import COUNTY_MAPPING, MUNICIPALITY_MAPPING, MUNICIPALITY_O
 
 DOMAIN = "krisinformation"
 
+# Frontend card resource handling
+CARD_FILENAME = "krisinformation-alert-card.js"
+CARD_WWW_DIR = "www"
+CARD_STATIC_BASE_PATH = f"/{DOMAIN}-static"
+CARD_CANONICAL_BASE_URL = f"{CARD_STATIC_BASE_PATH}/{CARD_FILENAME}"
+CARD_LEGACY_BASE_URL = f"/local/{CARD_FILENAME}"
+FRONTEND_DATA_KEY = f"{DOMAIN}_frontend"
+FRONTEND_DATA_COMPONENT_LISTENER = f"{DOMAIN}_component_listener"
+
 # Config/Options keys
 CONF_NAME = "name"
 CONF_MUNICIPALITY = "municipality"
