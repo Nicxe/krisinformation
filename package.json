@@ -14,6 +14,7 @@
     "npm": ">=11.12.1",
     "cross-spawn": "^7.0.6",
     "brace-expansion": "^2.0.2",
-    "undici": ">=7.24.0"
+    "undici": ">=7.24.0",
+    "picomatch": ">=4.0.4"
   }
 }
