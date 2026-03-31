@@ -11,7 +11,7 @@
   },
   "overrides": {
     "tar": "^7.5.11",
-    "npm": ">=11.10.1",
+    "npm": ">=11.12.1",
     "cross-spawn": "^7.0.6",
     "brace-expansion": "^2.0.2",
     "undici": ">=7.24.0"
