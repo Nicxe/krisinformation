@@ -44,6 +44,7 @@ class _FakeResources:
                 return item
         raise KeyError(item_id)
 
+
 @pytest.mark.asyncio
 async def test_ensure_resource_creates_when_missing(hass, monkeypatch) -> None:
     from types import SimpleNamespace

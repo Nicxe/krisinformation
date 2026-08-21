@@ -15,7 +15,17 @@
           "active_only": "Visa endast aktiva meddelanden",
           "include_update_cancel": "Visa Update/Cancel i sensorer",
           "severity_min": "Lägsta allvarlighetsgrad",
-          "api_environment": "API-miljö"
+          "api_environment": "API-miljö för VMA",
+          "include_news": "Ta med nyheter",
+          "include_notices": "Ta med notiser",
+          "include_smhi_weather_warnings": "Ta med SMHI:s vädervarningar bland notiser",
+          "news_days": "Antal dagar med nyheter",
+          "max_items": "Maximalt antal poster per innehållskälla",
+          "include_national": "Ta med nationellt innehåll",
+          "include_unlocated": "Ta med innehåll utan geografisk märkning"
+        },
+        "data_description": {
+          "include_smhi_weather_warnings": "Stäng av om du använder SMHI Alerts och vill undvika dubbla vädervarningar."
         }
       }
       ,
@@ -28,7 +38,17 @@
           "language": "Språk",
           "include_update_cancel": "Visa Update/Cancel i sensorer",
           "severity_min": "Lägsta allvarlighetsgrad",
-          "api_environment": "API-miljö"
+          "api_environment": "API-miljö för VMA",
+          "include_news": "Ta med nyheter",
+          "include_notices": "Ta med notiser",
+          "include_smhi_weather_warnings": "Ta med SMHI:s vädervarningar bland notiser",
+          "news_days": "Antal dagar med nyheter",
+          "max_items": "Maximalt antal poster per innehållskälla",
+          "include_national": "Ta med nationellt innehåll",
+          "include_unlocated": "Ta med innehåll utan geografisk märkning"
+        },
+        "data_description": {
+          "include_smhi_weather_warnings": "Stäng av om du använder SMHI Alerts och vill undvika dubbla vädervarningar."
         }
       },
       "reload_notice": {
@@ -41,13 +61,23 @@
     "step": {
       "init": {
         "title": "Krisinformation alternativ",
-        "description": "Styr hur meddelanden visas. Händelser för Ny/Update/Cancel skickas alltid för automationer.",
+        "description": "Konfigurera VMA, nyheter, notiser och geografisk innehållsfiltrering.",
         "data": {
           "language": "Språk",
           "active_only": "Visa endast aktiva meddelanden",
           "include_update_cancel": "Visa Update/Cancel i sensorer",
           "severity_min": "Lägsta allvarlighetsgrad",
-          "api_environment": "API-miljö"
+          "api_environment": "API-miljö för VMA",
+          "include_news": "Ta med nyheter",
+          "include_notices": "Ta med notiser",
+          "include_smhi_weather_warnings": "Ta med SMHI:s vädervarningar bland notiser",
+          "news_days": "Antal dagar med nyheter",
+          "max_items": "Maximalt antal poster per innehållskälla",
+          "include_national": "Ta med nationellt innehåll",
+          "include_unlocated": "Ta med innehåll utan geografisk märkning"
+        },
+        "data_description": {
+          "include_smhi_weather_warnings": "Stäng av om du använder SMHI Alerts och vill undvika dubbla vädervarningar."
         }
       }
     }
@@ -56,6 +86,12 @@
     "sensor": {
       "krisinformation": {
         "name": "Krisinformation VMA"
+      },
+      "news": {
+        "name": "Nyheter"
+      },
+      "notices": {
+        "name": "Notiser"
       }
     }
   }

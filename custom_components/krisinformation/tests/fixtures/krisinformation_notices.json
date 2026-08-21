@@ -1,0 +1,61 @@
+[
+  {
+    "Id": "notice-older",
+    "ContentId": 200,
+    "ContentTypeName": "featurepage",
+    "NoticeType": 1,
+    "Headline": "Äldre notis",
+    "Preamble": "Äldre ingress",
+    "BodyText": "Äldre text",
+    "MobileBody": "<p>Äldre mobiltext</p>",
+    "ImageLink": "",
+    "ImageCaption": "",
+    "VideoUrl": "",
+    "VideoCaption": "",
+    "YoutubeId": "",
+    "Links": [],
+    "ChangedDate": "2026-08-20T08:00:00+02:00",
+    "SortOrder": 1,
+    "Area": [],
+    "Layout": {
+      "BackgroundColor": "#FFFFFF",
+      "Icon": "notices_information",
+      "RightAlignedIcon": false
+    }
+  },
+  {
+    "Id": "notice-newer",
+    "ContentId": 201,
+    "ContentTypeName": "featurepage",
+    "NoticeType": 2,
+    "Headline": "Nyare notis",
+    "Preamble": "Viktig information",
+    "BodyText": "Håll dig uppdaterad.",
+    "MobileBody": "<p>Håll dig <strong>uppdaterad</strong>.</p>",
+    "ImageLink": "https://example.com/notice.jpg",
+    "ImageCaption": "Informationsbild",
+    "VideoUrl": "https://example.com/video",
+    "VideoCaption": "Informationsfilm",
+    "YoutubeId": "abc123",
+    "Links": [
+      {
+        "Text": "Ansvarig myndighet",
+        "Url": "https://example.com/notice"
+      }
+    ],
+    "ChangedDate": "2026-08-21T14:00:00+02:00",
+    "SortOrder": 0,
+    "Area": [
+      {
+        "Type": "County",
+        "Description": "Västra Götalands län",
+        "GeometryInformation": null
+      }
+    ],
+    "Layout": {
+      "BackgroundColor": "#FFCF00",
+      "Icon": "notices_announcement",
+      "RightAlignedIcon": true
+    }
+  }
+]
