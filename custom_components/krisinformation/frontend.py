@@ -131,8 +131,10 @@ async def _async_get_lovelace_resources(hass: HomeAssistant):
     if resources is None:
         return None
 
-    if hasattr(resources, "loaded") and not resources.loaded and hasattr(
-        resources, "async_load"
+    if (
+        hasattr(resources, "loaded")
+        and not resources.loaded
+        and hasattr(resources, "async_load")
     ):
         await resources.async_load()
         resources.loaded = True

@@ -1,0 +1,40 @@
+{
+  "alerts": [
+    {
+      "identifier": "alert-update-001",
+      "sender": "MSB",
+      "status": "Actual",
+      "msgType": "Update",
+      "scope": "Public",
+      "references": "alert-001",
+      "sent": "2024-01-15T14:00:00+01:00",
+      "info": [
+        {
+          "language": "sv-SE",
+          "severity": "Severe",
+          "expires": "2099-01-16T14:00:00+01:00",
+          "headline": "Uppdaterat VMA",
+          "description": "Uppdaterad information."
+        }
+      ]
+    },
+    {
+      "identifier": "alert-cancel-002",
+      "sender": "MSB",
+      "status": "Actual",
+      "msgType": "Cancel",
+      "scope": "Public",
+      "references": "alert-002",
+      "sent": "2024-01-15T15:00:00+01:00",
+      "info": [
+        {
+          "language": "sv-SE",
+          "severity": "Severe",
+          "expires": "2099-01-16T15:00:00+01:00",
+          "headline": "Avslutad VMA",
+          "description": "Meddelandet är avslutat."
+        }
+      ]
+    }
+  ]
+}

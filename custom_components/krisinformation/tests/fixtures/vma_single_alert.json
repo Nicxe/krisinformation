@@ -1,0 +1,68 @@
+{
+  "alerts": [
+    {
+      "identifier": "alert-001",
+      "sender": "MSB",
+      "status": "Actual",
+      "msgType": "Alert",
+      "scope": "Public",
+      "references": null,
+      "note": null,
+      "sent": "2024-01-15T10:00:00+01:00",
+      "info": [
+        {
+          "language": "sv-SE",
+          "category": "Safety",
+          "event": "Viktigt meddelande till allmänheten",
+          "responseType": "Monitor",
+          "urgency": "Immediate",
+          "severity": "Severe",
+          "certainty": "Observed",
+          "effective": "2024-01-15T09:00:00+01:00",
+          "onset": "2024-01-15T10:00:00+01:00",
+          "expires": "2099-01-16T10:00:00+01:00",
+          "headline": "Test VMA - Stockholms län",
+          "description": "Detta är ett testmeddelande.\r\nMed flera rader.",
+          "instruction": "Följ myndigheternas anvisningar.",
+          "contact": "test@example.com",
+          "web": "https://www.krisinformation.se",
+          "area": [
+            {
+              "areaDesc": "Stockholms län",
+              "geocode": [
+                {
+                  "valueName": "NUTS3",
+                  "value": "SE110"
+                }
+              ]
+            }
+          ],
+          "resource": []
+        },
+        {
+          "language": "en-US",
+          "category": "Safety",
+          "event": "Important public announcement",
+          "responseType": "Monitor",
+          "urgency": "Immediate",
+          "severity": "Severe",
+          "certainty": "Observed",
+          "effective": "2024-01-15T09:00:00+01:00",
+          "onset": "2024-01-15T10:00:00+01:00",
+          "expires": "2099-01-16T10:00:00+01:00",
+          "headline": "Test VMA - Stockholm County",
+          "description": "This is a test message.",
+          "instruction": "Follow authorities' instructions.",
+          "contact": "test@example.com",
+          "web": "https://www.krisinformation.se",
+          "area": [
+            {
+              "areaDesc": "Stockholm County"
+            }
+          ],
+          "resource": []
+        }
+      ]
+    }
+  ]
+}
