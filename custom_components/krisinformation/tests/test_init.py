@@ -46,6 +46,9 @@ class TestCoordinatorSetup:
 
         assert result is True
         assert mock_config_entry.runtime_data.vma_coordinator is not None
+        assert mock_config_entry.runtime_data.api_client is not None
+        assert mock_config_entry.runtime_data.news_coordinator is not None
+        assert mock_config_entry.runtime_data.notices_coordinator is not None
         assert (
             mock_config_entry.runtime_data.vma_coordinator.update_interval
             == timedelta(seconds=60)

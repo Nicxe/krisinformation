@@ -28,7 +28,7 @@ from custom_components.krisinformation.const import (
 )
 
 
-def load_fixture(filename: str) -> dict[str, Any]:
+def load_fixture(filename: str) -> Any:
     """Load a JSON fixture file."""
     fixture_path = Path(__file__).parent / "fixtures" / filename
     return json.loads(fixture_path.read_text(encoding="utf-8"))
@@ -146,6 +146,18 @@ def multiple_alerts_response() -> dict[str, Any]:
 def update_cancel_response() -> dict[str, Any]:
     """Update and Cancel message types fixture."""
     return load_fixture("vma_update_cancel.json")
+
+
+@pytest.fixture
+def news_response() -> list[dict[str, Any]]:
+    """Krisinformation news API response fixture."""
+    return load_fixture("krisinformation_news.json")
+
+
+@pytest.fixture
+def notices_response() -> list[dict[str, Any]]:
+    """Krisinformation notices API response fixture."""
+    return load_fixture("krisinformation_notices.json")
 
 
 @pytest.fixture

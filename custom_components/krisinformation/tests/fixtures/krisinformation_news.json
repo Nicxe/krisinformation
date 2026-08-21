@@ -1,0 +1,53 @@
+[
+  {
+    "Identifier": "news-older",
+    "ContentId": 100,
+    "ContentTypeName": "newspage",
+    "PushMessage": "Äldre pushtext",
+    "Updated": "2026-08-20T10:00:00+02:00",
+    "Published": "2026-08-20T09:00:00+02:00",
+    "Headline": "Äldre nyhet",
+    "Preamble": "Äldre ingress",
+    "BodyText": "<p>Äldre <strong>innehåll</strong>.</p>",
+    "ImageLink": "",
+    "Links": [],
+    "Area": [
+      {
+        "Type": "County",
+        "Description": "Stockholms län",
+        "GeometryInformation": null
+      }
+    ],
+    "Web": "https://www.krisinformation.se/nyheter/aldre",
+    "Language": "sv",
+    "Event": "News",
+    "SenderName": "Testmyndigheten",
+    "IsTest": false,
+    "Push": false
+  },
+  {
+    "Identifier": "news-newer",
+    "ContentId": 101,
+    "ContentTypeName": "newspage",
+    "PushMessage": null,
+    "Updated": "2026-08-21T12:30:00+02:00",
+    "Published": "2026-08-21T12:00:00+02:00",
+    "Headline": "Nyare &amp; viktig nyhet",
+    "Preamble": "En kort ingress",
+    "BodyText": "<p>Första stycket.</p><h2>Råd</h2><p>Följ myndighetens råd.&nbsp;</p>",
+    "ImageLink": "https://example.com/image.jpg",
+    "Links": [
+      {
+        "Text": "Läs mer",
+        "Url": "https://example.com/news"
+      }
+    ],
+    "Area": [],
+    "Web": "https://www.krisinformation.se/nyheter/nyare",
+    "Language": "sv",
+    "Event": "News",
+    "SenderName": "Krisinformation.se",
+    "IsTest": false,
+    "Push": true
+  }
+]

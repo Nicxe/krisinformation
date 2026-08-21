@@ -7,7 +7,6 @@ import async_timeout
 import re
 from aiohttp import ClientError, ClientResponseError
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import __version__ as HA_VERSION
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
@@ -15,7 +14,7 @@ from homeassistant.helpers import device_registry as dr, entity_registry as er
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
 
-from .frontend import async_setup_frontend
+from .api import KrisinformationApiClient, integration_user_agent
 from .const import (
     ACTIVE_ONLY_DEFAULT,
     API_ENV_PRODUCTION,
@@ -34,7 +33,6 @@ from .const import (
     EVENT_NEW_ALERT,
     EVENT_UPDATED_ALERT,
     INCLUDE_UPDATE_CANCEL_DEFAULT,
-    INTEGRATION_VERSION,
     LANGUAGE_DEFAULT,
     MUNICIPALITY_DEFAULT,
     MUNICIPALITY_MAPPING,
@@ -43,12 +41,16 @@ from .const import (
     SEVERITY_ORDER,
     TEST_BASE_URL,
     UPDATE_INTERVAL_DEFAULT_SECONDS,
-    USER_AGENT_PRODUCT,
     VMA_MAX_BACKOFF_SECONDS,
     VMA_PRODUCTION_STATUSES,
     VMA_TEST_STATUSES,
     VMA_UPDATE_INTERVAL_SECONDS,
 )
+from .coordinator import (
+    KrisinformationNewsCoordinator,
+    KrisinformationNoticesCoordinator,
+)
+from .frontend import async_setup_frontend
 from .helpers import (
     legacy_location_slug,
     vma_active_unique_id,
@@ -100,7 +102,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         hass, session, entry, timedelta(seconds=VMA_UPDATE_INTERVAL_SECONDS)
     )
     await coordinator.async_config_entry_first_refresh()
-    entry.runtime_data = KrisinformationRuntimeData(vma_coordinator=coordinator)
+    api_client = KrisinformationApiClient(session)
+    entry.runtime_data = KrisinformationRuntimeData(
+        vma_coordinator=coordinator,
+        api_client=api_client,
+        news_coordinator=KrisinformationNewsCoordinator(hass, api_client, entry),
+        notices_coordinator=KrisinformationNoticesCoordinator(hass, api_client, entry),
+    )
 
     await hass.config_entries.async_forward_entry_setups(
         entry, ["sensor", "binary_sensor"]
@@ -254,12 +262,7 @@ class KrisinformationDataUpdateCoordinator(DataUpdateCoordinator):
         return url, params
 
     def _compose_user_agent(self) -> str:
-        integration_version = INTEGRATION_VERSION or "0.0.0"
-        ha_version = HA_VERSION or "unknown"
-        ua = f"{USER_AGENT_PRODUCT}/{integration_version}"
-        if ha_version:
-            ua = f"{ua} HomeAssistant/{ha_version}"
-        return ua
+        return integration_user_agent()
 
     def _build_headers(self) -> Dict[str, str]:
         return {"User-Agent": self._user_agent, "Accept": "application/json"}
