@@ -19,6 +19,12 @@ from custom_components.krisinformation.const import (
     CONF_INCLUDE_UPDATE_CANCEL,
     CONF_SEVERITY_MIN,
     CONF_API_ENV,
+    CONF_INCLUDE_NATIONAL,
+    CONF_INCLUDE_NEWS,
+    CONF_INCLUDE_NOTICES,
+    CONF_INCLUDE_UNLOCATED,
+    CONF_MAX_ITEMS,
+    CONF_NEWS_DAYS,
     API_ENV_PRODUCTION,
     LANGUAGE_DEFAULT,
     INCLUDE_UPDATE_CANCEL_DEFAULT,
@@ -26,6 +32,15 @@ from custom_components.krisinformation.const import (
     PRODUCTION_BASE_URL,
     TEST_BASE_URL,
 )
+
+_CONTENT_OPTIONS = {
+    CONF_INCLUDE_NEWS: True,
+    CONF_INCLUDE_NOTICES: True,
+    CONF_NEWS_DAYS: 7,
+    CONF_MAX_ITEMS: 10,
+    CONF_INCLUDE_NATIONAL: True,
+    CONF_INCLUDE_UNLOCATED: True,
+}
 
 
 def load_fixture(filename: str) -> Any:
@@ -51,13 +66,14 @@ def mock_config_entry() -> MockConfigEntry:
             CONF_MUNICIPALITY: "Stockholm",
         },
         options={
+            **_CONTENT_OPTIONS,
             CONF_LANGUAGE: LANGUAGE_DEFAULT,
             CONF_INCLUDE_UPDATE_CANCEL: INCLUDE_UPDATE_CANCEL_DEFAULT,
             CONF_SEVERITY_MIN: SEVERITY_MIN_DEFAULT,
             CONF_API_ENV: API_ENV_PRODUCTION,
         },
         entry_id="test_entry_id",
-        version=3,
+        version=4,
     )
 
 
@@ -72,13 +88,14 @@ def mock_config_entry_hela_sverige() -> MockConfigEntry:
             CONF_MUNICIPALITY: "Hela Sverige",
         },
         options={
+            **_CONTENT_OPTIONS,
             CONF_LANGUAGE: LANGUAGE_DEFAULT,
             CONF_INCLUDE_UPDATE_CANCEL: INCLUDE_UPDATE_CANCEL_DEFAULT,
             CONF_SEVERITY_MIN: SEVERITY_MIN_DEFAULT,
             CONF_API_ENV: API_ENV_PRODUCTION,
         },
         entry_id="test_entry_hela_sverige",
-        version=3,
+        version=4,
     )
 
 
@@ -93,13 +110,14 @@ def mock_config_entry_include_updates() -> MockConfigEntry:
             CONF_MUNICIPALITY: "Stockholm",
         },
         options={
+            **_CONTENT_OPTIONS,
             CONF_LANGUAGE: LANGUAGE_DEFAULT,
             CONF_INCLUDE_UPDATE_CANCEL: True,
             CONF_SEVERITY_MIN: SEVERITY_MIN_DEFAULT,
             CONF_API_ENV: API_ENV_PRODUCTION,
         },
         entry_id="test_entry_with_updates",
-        version=3,
+        version=4,
     )
 
 
@@ -114,13 +132,14 @@ def mock_config_entry_severity_severe() -> MockConfigEntry:
             CONF_MUNICIPALITY: "Stockholm",
         },
         options={
+            **_CONTENT_OPTIONS,
             CONF_LANGUAGE: LANGUAGE_DEFAULT,
             CONF_INCLUDE_UPDATE_CANCEL: INCLUDE_UPDATE_CANCEL_DEFAULT,
             CONF_SEVERITY_MIN: "Severe",
             CONF_API_ENV: API_ENV_PRODUCTION,
         },
         entry_id="test_entry_severity_severe",
-        version=3,
+        version=4,
     )
 
 

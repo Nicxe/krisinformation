@@ -18,6 +18,12 @@ from custom_components.krisinformation.const import (
     CONF_INCLUDE_UPDATE_CANCEL,
     CONF_SEVERITY_MIN,
     CONF_API_ENV,
+    CONF_INCLUDE_NATIONAL,
+    CONF_INCLUDE_NEWS,
+    CONF_INCLUDE_NOTICES,
+    CONF_INCLUDE_UNLOCATED,
+    CONF_MAX_ITEMS,
+    CONF_NEWS_DAYS,
     LANGUAGE_DEFAULT,
     INCLUDE_UPDATE_CANCEL_DEFAULT,
     SEVERITY_MIN_DEFAULT,
@@ -66,6 +72,10 @@ class TestUserStep:
         assert result["title"] == "My Alerts (Stockholm)"
         assert result["data"][CONF_NAME] == "My Alerts"
         assert result["data"][CONF_MUNICIPALITY] == "Stockholm"
+        assert result["options"][CONF_INCLUDE_NEWS] is True
+        assert result["options"][CONF_INCLUDE_NOTICES] is True
+        assert result["options"][CONF_NEWS_DAYS] == 7
+        assert result["options"][CONF_MAX_ITEMS] == 10
 
     async def test_user_step_default_name(self, hass: HomeAssistant) -> None:
         """Test user step uses default name when not provided."""
@@ -139,6 +149,12 @@ class TestUserStep:
                     CONF_INCLUDE_UPDATE_CANCEL: True,
                     CONF_SEVERITY_MIN: "Severe",
                     CONF_API_ENV: API_ENV_TEST,
+                    CONF_INCLUDE_NEWS: True,
+                    CONF_INCLUDE_NOTICES: False,
+                    CONF_NEWS_DAYS: 14,
+                    CONF_MAX_ITEMS: 20,
+                    CONF_INCLUDE_NATIONAL: False,
+                    CONF_INCLUDE_UNLOCATED: False,
                 },
             )
 
@@ -149,10 +165,15 @@ class TestUserStep:
             )
 
         assert result["type"] == FlowResultType.CREATE_ENTRY
-        assert result["data"][CONF_LANGUAGE] == "en-US"
-        assert result["data"][CONF_INCLUDE_UPDATE_CANCEL] is True
-        assert result["data"][CONF_SEVERITY_MIN] == "Severe"
-        assert result["data"][CONF_API_ENV] == API_ENV_TEST
+        assert result["options"][CONF_LANGUAGE] == "en-US"
+        assert result["options"][CONF_INCLUDE_UPDATE_CANCEL] is True
+        assert result["options"][CONF_SEVERITY_MIN] == "Severe"
+        assert result["options"][CONF_API_ENV] == API_ENV_TEST
+        assert result["options"][CONF_INCLUDE_NOTICES] is False
+        assert result["options"][CONF_NEWS_DAYS] == 14
+        assert result["options"][CONF_MAX_ITEMS] == 20
+        assert result["options"][CONF_INCLUDE_NATIONAL] is False
+        assert result["options"][CONF_INCLUDE_UNLOCATED] is False
 
 
 class TestOptionsFlow:
@@ -188,6 +209,12 @@ class TestOptionsFlow:
                 CONF_SEVERITY_MIN: "Severe",
                 CONF_INCLUDE_UPDATE_CANCEL: True,
                 CONF_API_ENV: API_ENV_PRODUCTION,
+                CONF_INCLUDE_NEWS: False,
+                CONF_INCLUDE_NOTICES: True,
+                CONF_NEWS_DAYS: 14,
+                CONF_MAX_ITEMS: 25,
+                CONF_INCLUDE_NATIONAL: False,
+                CONF_INCLUDE_UNLOCATED: True,
             },
         )
 
@@ -195,6 +222,9 @@ class TestOptionsFlow:
         assert mock_config_entry.options[CONF_LANGUAGE] == "en-US"
         assert mock_config_entry.options[CONF_SEVERITY_MIN] == "Severe"
         assert mock_config_entry.options[CONF_INCLUDE_UPDATE_CANCEL] is True
+        assert mock_config_entry.options[CONF_INCLUDE_NEWS] is False
+        assert mock_config_entry.options[CONF_NEWS_DAYS] == 14
+        assert mock_config_entry.options[CONF_MAX_ITEMS] == 25
 
     async def test_options_flow_change_language(
         self, hass: HomeAssistant, mock_config_entry: MockConfigEntry

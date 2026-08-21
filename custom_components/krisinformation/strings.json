@@ -14,7 +14,13 @@
           "language": "Language",
           "include_update_cancel": "Include Update/Cancel in sensors",
           "severity_min": "Minimum severity",
-          "api_environment": "API environment"
+          "api_environment": "VMA API environment",
+          "include_news": "Include news",
+          "include_notices": "Include notices",
+          "news_days": "Days of news history",
+          "max_items": "Maximum items per content source",
+          "include_national": "Include national content",
+          "include_unlocated": "Include content without a geographic tag"
         }
       }
       ,
@@ -27,7 +33,13 @@
           "language": "Language",
           "include_update_cancel": "Include Update/Cancel in sensors",
           "severity_min": "Minimum severity",
-          "api_environment": "API environment"
+          "api_environment": "VMA API environment",
+          "include_news": "Include news",
+          "include_notices": "Include notices",
+          "news_days": "Days of news history",
+          "max_items": "Maximum items per content source",
+          "include_national": "Include national content",
+          "include_unlocated": "Include content without a geographic tag"
         }
       },
       "reload_notice": {
@@ -40,12 +52,18 @@
     "step": {
       "init": {
         "title": "Krisinformation options",
-        "description": "Configure how alerts are shown. Events for New/Update/Cancel are always fired.",
+        "description": "Configure VMA, news, notices, and geographic content filtering.",
         "data": {
           "language": "Language",
           "include_update_cancel": "Include Update/Cancel in sensors",
           "severity_min": "Minimum severity",
-          "api_environment": "API environment"
+          "api_environment": "VMA API environment",
+          "include_news": "Include news",
+          "include_notices": "Include notices",
+          "news_days": "Days of news history",
+          "max_items": "Maximum items per content source",
+          "include_national": "Include national content",
+          "include_unlocated": "Include content without a geographic tag"
         }
       }
     }

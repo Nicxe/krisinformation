@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import timedelta
 import re
 from typing import Any
+from unittest.mock import AsyncMock, MagicMock
 from urllib.parse import parse_qs, urlparse
 
 from aioresponses import CallbackResult, aioresponses
@@ -28,7 +29,12 @@ from custom_components.krisinformation.coordinator import (
     KrisinformationNewsCoordinator,
     KrisinformationNoticesCoordinator,
 )
-from custom_components.krisinformation.models import html_to_text
+from custom_components.krisinformation.helpers import (
+    content_matches_geography,
+    county_code_for_location,
+    county_name_for_location,
+)
+from custom_components.krisinformation.models import ContentArea, NewsItem, html_to_text
 
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -181,7 +187,7 @@ async def test_content_coordinators_are_independent(
     assert news.last_update_success is False
     assert notices.last_update_success is True
     assert notices.data is not None
-    assert len(notices.data) == 2
+    assert len(notices.data) == 1
     assert news.update_interval == timedelta(seconds=NEWS_UPDATE_INTERVAL_SECONDS)
     assert notices.update_interval == timedelta(seconds=NOTICES_UPDATE_INTERVAL_SECONDS)
 
@@ -190,3 +196,100 @@ def test_html_to_text_accepts_plain_and_html_content() -> None:
     """Test text extraction is stable for mixed API fields."""
     assert html_to_text("Vanlig text") == "Vanlig text"
     assert html_to_text("<p>Rad ett<br>rad två&nbsp;</p>") == "Rad ett rad två"
+
+
+def test_municipality_is_mapped_to_krisinformation_county() -> None:
+    """Test local VMA selections map to the API's county-level geography."""
+    assert county_code_for_location("Göteborg") == "14"
+    assert county_name_for_location("Göteborg") == "Västra Götalands län"
+    assert county_code_for_location("Västra Götalands län") == "14"
+    assert county_code_for_location("Hela Sverige") is None
+
+
+def test_geography_filter_distinguishes_national_and_unlocated() -> None:
+    """Test users can independently include national and untagged content."""
+    national = (ContentArea(type="Country", description="Sverige"),)
+    stockholm = (ContentArea(type="County", description="Stockholms län"),)
+
+    assert content_matches_geography(
+        national,
+        "Göteborg",
+        include_national=True,
+        include_unlocated=False,
+    )
+    assert not content_matches_geography(
+        national,
+        "Göteborg",
+        include_national=False,
+        include_unlocated=True,
+    )
+    assert not content_matches_geography(
+        stockholm,
+        "Göteborg",
+        include_national=True,
+        include_unlocated=True,
+    )
+    assert content_matches_geography(
+        (),
+        "Göteborg",
+        include_national=False,
+        include_unlocated=True,
+    )
+
+
+async def test_news_coordinator_applies_source_and_geographic_options(
+    hass: HomeAssistant,
+    news_response: list[dict[str, Any]],
+) -> None:
+    """Test news uses the derived county and local post-filtering options."""
+    news_response[0]["Area"][0]["Description"] = "Västra Götalands län"
+    items = tuple(NewsItem.from_api(item) for item in news_response)
+    client = MagicMock()
+    client.async_get_news = AsyncMock(return_value=items)
+    entry = MockConfigEntry(
+        domain="krisinformation",
+        data={"name": "Local", "municipality": "Göteborg"},
+        options={
+            "language": "sv-SE",
+            "include_news": True,
+            "news_days": 14,
+            "max_items": 1,
+            "include_national": False,
+            "include_unlocated": False,
+        },
+        entry_id="local_news",
+        version=4,
+    )
+    coordinator = KrisinformationNewsCoordinator(hass, client, entry)
+
+    await coordinator.async_refresh()
+
+    client.async_get_news.assert_awaited_once_with(
+        language="sv-SE",
+        county_codes=("14",),
+        all_counties=False,
+        days=14,
+    )
+    assert coordinator.data is not None
+    assert [item.identifier for item in coordinator.data] == ["news-older"]
+
+
+async def test_disabled_news_source_avoids_api_requests(
+    hass: HomeAssistant,
+) -> None:
+    """Test disabling news avoids unnecessary cloud polling."""
+    client = MagicMock()
+    client.async_get_news = AsyncMock()
+    entry = MockConfigEntry(
+        domain="krisinformation",
+        data={"name": "VMA only", "municipality": "Hela Sverige"},
+        options={"include_news": False},
+        entry_id="vma_only",
+        version=4,
+    )
+    coordinator = KrisinformationNewsCoordinator(hass, client, entry)
+
+    await coordinator.async_refresh()
+
+    assert coordinator.data == ()
+    client.async_get_news.assert_not_awaited()

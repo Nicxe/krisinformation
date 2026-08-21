@@ -21,9 +21,15 @@ from .const import (
     API_ENV_TEST,
     CONF_ACTIVE_ONLY,
     CONF_API_ENV,
+    CONF_INCLUDE_NATIONAL,
+    CONF_INCLUDE_NEWS,
+    CONF_INCLUDE_NOTICES,
+    CONF_INCLUDE_UNLOCATED,
     CONF_INCLUDE_UPDATE_CANCEL,
     CONF_LANGUAGE,
+    CONF_MAX_ITEMS,
     CONF_MUNICIPALITY,
+    CONF_NEWS_DAYS,
     CONF_SEVERITY_MIN,
     CONF_UPDATE_INTERVAL,
     COUNTY_MAPPING,
@@ -33,9 +39,15 @@ from .const import (
     EVENT_NEW_ALERT,
     EVENT_UPDATED_ALERT,
     INCLUDE_UPDATE_CANCEL_DEFAULT,
+    INCLUDE_NATIONAL_DEFAULT,
+    INCLUDE_NEWS_DEFAULT,
+    INCLUDE_NOTICES_DEFAULT,
+    INCLUDE_UNLOCATED_DEFAULT,
     LANGUAGE_DEFAULT,
+    MAX_ITEMS_DEFAULT,
     MUNICIPALITY_DEFAULT,
     MUNICIPALITY_MAPPING,
+    NEWS_DEFAULT_DAYS,
     PRODUCTION_BASE_URL,
     SEVERITY_MIN_DEFAULT,
     SEVERITY_ORDER,
@@ -200,6 +212,33 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             version=3,
         )
         _LOGGER.info("Migration to v3 successful for %s", entry.title)
+    if entry.version == 3:
+        _LOGGER.debug("Migrating config entry from v3 to v4 for %s", entry.title)
+        new_data = dict(entry.data)
+        new_options = dict(entry.options)
+        option_defaults = {
+            CONF_LANGUAGE: LANGUAGE_DEFAULT,
+            CONF_INCLUDE_UPDATE_CANCEL: INCLUDE_UPDATE_CANCEL_DEFAULT,
+            CONF_SEVERITY_MIN: SEVERITY_MIN_DEFAULT,
+            CONF_API_ENV: API_ENV_PRODUCTION,
+            CONF_INCLUDE_NEWS: INCLUDE_NEWS_DEFAULT,
+            CONF_INCLUDE_NOTICES: INCLUDE_NOTICES_DEFAULT,
+            CONF_NEWS_DAYS: NEWS_DEFAULT_DAYS,
+            CONF_MAX_ITEMS: MAX_ITEMS_DEFAULT,
+            CONF_INCLUDE_NATIONAL: INCLUDE_NATIONAL_DEFAULT,
+            CONF_INCLUDE_UNLOCATED: INCLUDE_UNLOCATED_DEFAULT,
+        }
+        for key, default in option_defaults.items():
+            if key not in new_options:
+                new_options[key] = new_data.get(key, default)
+            new_data.pop(key, None)
+        hass.config_entries.async_update_entry(
+            entry,
+            data=new_data,
+            options=new_options,
+            version=4,
+        )
+        _LOGGER.info("Migration to v4 successful for %s", entry.title)
     return True
 
 

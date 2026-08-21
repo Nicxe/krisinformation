@@ -15,7 +15,13 @@
           "active_only": "Visa endast aktiva meddelanden",
           "include_update_cancel": "Visa Update/Cancel i sensorer",
           "severity_min": "Lägsta allvarlighetsgrad",
-          "api_environment": "API-miljö"
+          "api_environment": "API-miljö för VMA",
+          "include_news": "Ta med nyheter",
+          "include_notices": "Ta med notiser",
+          "news_days": "Antal dagar med nyheter",
+          "max_items": "Maximalt antal poster per innehållskälla",
+          "include_national": "Ta med nationellt innehåll",
+          "include_unlocated": "Ta med innehåll utan geografisk märkning"
         }
       }
       ,
@@ -28,7 +34,13 @@
           "language": "Språk",
           "include_update_cancel": "Visa Update/Cancel i sensorer",
           "severity_min": "Lägsta allvarlighetsgrad",
-          "api_environment": "API-miljö"
+          "api_environment": "API-miljö för VMA",
+          "include_news": "Ta med nyheter",
+          "include_notices": "Ta med notiser",
+          "news_days": "Antal dagar med nyheter",
+          "max_items": "Maximalt antal poster per innehållskälla",
+          "include_national": "Ta med nationellt innehåll",
+          "include_unlocated": "Ta med innehåll utan geografisk märkning"
         }
       },
       "reload_notice": {
@@ -41,13 +53,19 @@
     "step": {
       "init": {
         "title": "Krisinformation alternativ",
-        "description": "Styr hur meddelanden visas. Händelser för Ny/Update/Cancel skickas alltid för automationer.",
+        "description": "Konfigurera VMA, nyheter, notiser och geografisk innehållsfiltrering.",
         "data": {
           "language": "Språk",
           "active_only": "Visa endast aktiva meddelanden",
           "include_update_cancel": "Visa Update/Cancel i sensorer",
           "severity_min": "Lägsta allvarlighetsgrad",
-          "api_environment": "API-miljö"
+          "api_environment": "API-miljö för VMA",
+          "include_news": "Ta med nyheter",
+          "include_notices": "Ta med notiser",
+          "news_days": "Antal dagar med nyheter",
+          "max_items": "Maximalt antal poster per innehållskälla",
+          "include_national": "Ta med nationellt innehåll",
+          "include_unlocated": "Ta med innehåll utan geografisk märkning"
         }
       }
     }

@@ -124,6 +124,42 @@ class TestCoordinatorSetup:
         }
 
 
+async def test_v3_entry_migrates_optional_settings_to_v4(
+    hass: HomeAssistant,
+) -> None:
+    """Test existing optional values move out of config entry data."""
+    from custom_components.krisinformation import async_migrate_entry
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Legacy entry",
+        data={
+            "name": "Legacy",
+            "municipality": "Göteborg",
+            "language": "en-US",
+            "api_environment": "test",
+        },
+        options={"severity_min": "Extreme"},
+        entry_id="legacy_v3_entry",
+        version=3,
+    )
+    entry.add_to_hass(hass)
+
+    assert await async_migrate_entry(hass, entry) is True
+
+    assert entry.version == 4
+    assert entry.data == {"name": "Legacy", "municipality": "Göteborg"}
+    assert entry.options["language"] == "en-US"
+    assert entry.options["api_environment"] == "test"
+    assert entry.options["severity_min"] == "Extreme"
+    assert entry.options["include_news"] is True
+    assert entry.options["include_notices"] is True
+    assert entry.options["news_days"] == 7
+    assert entry.options["max_items"] == 10
+    assert entry.options["include_national"] is True
+    assert entry.options["include_unlocated"] is True
+
+
 class TestAPIRequests:
     """Test API request handling."""
 
