@@ -99,6 +99,7 @@ card.setConfig({
   entity: 'sensor.vma',
   news_entity: 'sensor.news',
   notices_entity: 'sensor.notices',
+  group_by: 'source',
 });
 
 const combined = card._alerts();
@@ -111,6 +112,8 @@ assert.deepEqual(card._visibleAlerts().map((item) => item.identifier), [
   'notice-1',
   'vma-1',
 ]);
+const sourceGroups = card._renderGrouped(combined);
+assert.deepEqual(sourceGroups.map((group) => group.values[0]), ['VMA', 'News', 'Notices']);
 
 card._activeSource = 'news';
 assert.deepEqual(card._visibleAlerts().map((item) => item.identifier), ['news-1']);
@@ -121,4 +124,7 @@ assert.equal(card._alerts()[0].source_type, 'vma');
 assert.throws(() => card.setConfig({}), /at least one Krisinformation entity/);
 
 assert.equal(window.customCards[0].type, 'krisinformation-alert-card');
+const styles = Card.styles.strings.join('');
+assert.match(styles, /--kris-alert-item-gap:\s*8px/);
+assert.match(styles, /\.area-group\s*>\s*\.alert\s*\+\s*\.alert/);
 console.log('Krisinformation card tests passed');

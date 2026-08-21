@@ -17,6 +17,7 @@ from .const import (
     CONF_INCLUDE_NATIONAL,
     CONF_INCLUDE_NEWS,
     CONF_INCLUDE_NOTICES,
+    CONF_INCLUDE_SMHI_WEATHER_WARNINGS,
     CONF_INCLUDE_UNLOCATED,
     CONF_INCLUDE_UPDATE_CANCEL,
     CONF_LANGUAGE,
@@ -28,6 +29,7 @@ from .const import (
     INCLUDE_NATIONAL_DEFAULT,
     INCLUDE_NEWS_DEFAULT,
     INCLUDE_NOTICES_DEFAULT,
+    INCLUDE_SMHI_WEATHER_WARNINGS_DEFAULT,
     INCLUDE_UNLOCATED_DEFAULT,
     INCLUDE_UPDATE_CANCEL_DEFAULT,
     LANGUAGE_DEFAULT,
@@ -45,6 +47,7 @@ _OPTION_DEFAULTS: dict[str, Any] = {
     CONF_API_ENV: API_ENV_PRODUCTION,
     CONF_INCLUDE_NEWS: INCLUDE_NEWS_DEFAULT,
     CONF_INCLUDE_NOTICES: INCLUDE_NOTICES_DEFAULT,
+    CONF_INCLUDE_SMHI_WEATHER_WARNINGS: INCLUDE_SMHI_WEATHER_WARNINGS_DEFAULT,
     CONF_NEWS_DAYS: NEWS_DEFAULT_DAYS,
     CONF_MAX_ITEMS: MAX_ITEMS_DEFAULT,
     CONF_INCLUDE_NATIONAL: INCLUDE_NATIONAL_DEFAULT,
@@ -78,6 +81,10 @@ def _options_schema(defaults: dict[str, Any]) -> dict[vol.Marker, Any]:
         vol.Optional(CONF_INCLUDE_NEWS, default=defaults[CONF_INCLUDE_NEWS]): bool,
         vol.Optional(
             CONF_INCLUDE_NOTICES, default=defaults[CONF_INCLUDE_NOTICES]
+        ): bool,
+        vol.Optional(
+            CONF_INCLUDE_SMHI_WEATHER_WARNINGS,
+            default=defaults[CONF_INCLUDE_SMHI_WEATHER_WARNINGS],
         ): bool,
         vol.Optional(CONF_NEWS_DAYS, default=defaults[CONF_NEWS_DAYS]): vol.All(
             vol.Coerce(int), vol.Range(min=1, max=30)
@@ -135,7 +142,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Configure Krisinformation."""
 
-    VERSION = 4
+    VERSION = 5
 
     def __init__(self) -> None:
         self._pending_entry_title: str | None = None

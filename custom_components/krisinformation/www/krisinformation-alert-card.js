@@ -36,6 +36,8 @@ class KrisinformationAlertCard extends LitElement {
       --kris-alert-compact-title-offset: 2px;
       /* Outer horizontal padding for the list (set to 0 to align with other cards) */
       --kris-alert-outer-padding: 0px;
+      /* Consistent separation between consecutive information items */
+      --kris-alert-item-gap: 8px;
       display: block;
     }
 
@@ -52,9 +54,13 @@ class KrisinformationAlertCard extends LitElement {
     .alerts {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: var(--kris-alert-item-gap, 8px);
       /* No vertical padding: otherwise it becomes visible whitespace between stacked cards */
       padding: 0 var(--kris-alert-outer-padding, 0px);
+    }
+    /* Group wrappers otherwise bypass the flex gap between individual items. */
+    .area-group > .alert + .alert {
+      margin-top: var(--kris-alert-item-gap, 8px);
     }
     .source-filter {
       display: flex;
@@ -532,7 +538,10 @@ class KrisinformationAlertCard extends LitElement {
 
     // Sort group keys
     let keys = Object.keys(groups);
-    if (groupBy === 'severity') {
+    if (groupBy === 'source') {
+      const sourceOrder = ['vma', 'news', 'notices'].map((source) => this._t(source));
+      keys.sort((a, b) => sourceOrder.indexOf(a) - sourceOrder.indexOf(b));
+    } else if (groupBy === 'severity') {
       keys.sort((ka, kb) => {
         const ra = this._severityRank({ severity: ka });
         const rb = this._severityRank({ severity: kb });

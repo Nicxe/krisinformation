@@ -33,7 +33,9 @@ from custom_components.krisinformation.sensor import (
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 
-def _content_entry(entry_id: str = "content_entry") -> MockConfigEntry:
+def _content_entry(
+    entry_id: str = "content_entry", *, include_smhi_weather_warnings: bool = True
+) -> MockConfigEntry:
     return MockConfigEntry(
         domain=DOMAIN,
         title="Krisinformation (Hela Sverige)",
@@ -45,13 +47,14 @@ def _content_entry(entry_id: str = "content_entry") -> MockConfigEntry:
             "api_environment": "production",
             "include_news": True,
             "include_notices": True,
+            "include_smhi_weather_warnings": include_smhi_weather_warnings,
             "news_days": 7,
             "max_items": 10,
             "include_national": True,
             "include_unlocated": True,
         },
         entry_id=entry_id,
-        version=4,
+        version=5,
     )
 
 
@@ -141,6 +144,45 @@ async def test_content_sensors_expose_bounded_normalized_items(
     assert diagnostics["sources"]["news"]["last_success"] is True
     assert len(diagnostics["sources"]["news"]["data"]) == 2
     assert diagnostics["sources"]["notices"]["update_interval"] == 300
+
+
+async def test_notice_sensor_excludes_smhi_weather_warnings_when_disabled(
+    hass: HomeAssistant,
+    mock_aiohttp: aioresponses,
+    empty_response: dict[str, Any],
+    news_response: list[dict[str, Any]],
+    notices_response: list[dict[str, Any]],
+) -> None:
+    """Test the integration-level option removes SMHI warnings from state."""
+    entry = _content_entry("filtered_notices", include_smhi_weather_warnings=False)
+    response = deepcopy(notices_response)
+    response[0]["Layout"]["Icon"] = "warning_SMHI_class_2"
+    _mock_sources(
+        mock_aiohttp,
+        empty_response,
+        news_response,
+        response,
+    )
+    entry.add_to_hass(hass)
+
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    entity_registry = er.async_get(hass)
+    notices_entity_id = entity_registry.async_get_entity_id(
+        "sensor", DOMAIN, notices_unique_id(entry.entry_id)
+    )
+    assert notices_entity_id is not None
+    notices_state = hass.states.get(notices_entity_id)
+    assert notices_state is not None
+    assert notices_state.state == "1"
+    assert [item["identifier"] for item in notices_state.attributes["items"]] == [
+        "notice-newer"
+    ]
+    assert all(
+        not item["is_smhi_weather_warning"]
+        for item in notices_state.attributes["items"]
+    )
 
 
 async def test_content_source_failure_does_not_block_vma_or_notices(

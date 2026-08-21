@@ -57,6 +57,10 @@ The location selection has source-specific precision:
 
 The integration options also control whether news and notices are enabled, the number of news-history days, the maximum displayed items per source, language, VMA severity, Update/Cancel visibility, and the SR production/test environment. Polling intervals are managed by the integration and are not user configurable.
 
+Krisinformation also republishes SMHI weather warnings as notices. **Include SMHI weather warnings in notices** is enabled by default so the integration remains complete when used on its own. Turn it off during setup or later under **Settings > Devices & services > Krisinformation > Configure** when the dedicated SMHI Alerts integration supplies your weather warnings. The filter is applied before sensor state and lifecycle events are created, so disabling it removes duplicates from dashboards, templates, and automations rather than only hiding them in the bundled card.
+
+Only notices explicitly identified by Krisinformation with an SMHI warning layout are filtered. Weather-related editorial news remains available in the news sensor. If Krisinformation changes the layout metadata, an unrecognized item remains visible instead of being silently discarded.
+
 Existing installations migrate automatically. The original VMA entity IDs are retained, even if the configured location changes.
 
 ## Entities
@@ -68,7 +72,7 @@ The exact entity IDs depend on the configured name and location. The integration
 - A news count sensor with `items` and `latest` attributes when news is enabled.
 - A notices count sensor with `items` and `latest` attributes when notices are enabled.
 
-News and notice item attributes include their identifier, headline, preamble, safe plain-text body, timestamps, geographic areas, source, links, and source-specific metadata. Large collection attributes are excluded from recorder history while remaining available to dashboards and templates.
+News and notice item attributes include their identifier, headline, preamble, safe plain-text body, timestamps, geographic areas, links, and source-specific metadata. Notice items also expose `is_smhi_weather_warning`, which can be used in templates and diagnostics even when SMHI warnings are included. Large collection attributes are excluded from recorder history while remaining available to dashboards and templates.
 
 Each source has independent availability. A Krisinformation news outage therefore does not make VMA or notices unavailable.
 
@@ -93,7 +97,9 @@ group_by: none
 max_items: 10
 ```
 
-The source chips switch the visible feed without changing the integration filters. Card-level source, severity, and area filters are available in the editor. Leaving the icon override blank uses a source-specific icon.
+The source chips switch the visible feed without changing the integration filters. Card-level source, severity, and area filters are available in the editor. When content is grouped by source, groups are shown in priority order: **VMA, News, Notices**. Leaving the icon override blank uses a source-specific icon.
+
+Consecutive items have a consistent 8-pixel gap, including items inside the same group. Advanced themes or card styling can override this through the `--kris-alert-item-gap` CSS variable.
 
 If automatic resource setup is unavailable, add `/local/krisinformation-alert-card.js` manually as a JavaScript module.
 

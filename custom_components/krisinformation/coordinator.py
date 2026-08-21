@@ -17,6 +17,7 @@ from .const import (
     CONF_INCLUDE_NATIONAL,
     CONF_INCLUDE_NEWS,
     CONF_INCLUDE_NOTICES,
+    CONF_INCLUDE_SMHI_WEATHER_WARNINGS,
     CONF_INCLUDE_UNLOCATED,
     CONF_MAX_ITEMS,
     CONF_MUNICIPALITY,
@@ -24,6 +25,7 @@ from .const import (
     INCLUDE_NATIONAL_DEFAULT,
     INCLUDE_NEWS_DEFAULT,
     INCLUDE_NOTICES_DEFAULT,
+    INCLUDE_SMHI_WEATHER_WARNINGS_DEFAULT,
     INCLUDE_UNLOCATED_DEFAULT,
     LANGUAGE_DEFAULT,
     MAX_ITEMS_DEFAULT,
@@ -66,6 +68,12 @@ def _content_scope(entry: ConfigEntry, source: str) -> str:
     }
     if source == "news":
         scope["days"] = _entry_option(entry, CONF_NEWS_DAYS, NEWS_DEFAULT_DAYS)
+    else:
+        scope["include_smhi_weather_warnings"] = _entry_option(
+            entry,
+            CONF_INCLUDE_SMHI_WEATHER_WARNINGS,
+            INCLUDE_SMHI_WEATHER_WARNINGS_DEFAULT,
+        )
     return json.dumps(scope, sort_keys=True, separators=(",", ":"))
 
 
@@ -174,6 +182,11 @@ class KrisinformationNoticesCoordinator(DataUpdateCoordinator[tuple[NoticeItem, 
             raise UpdateFailed(
                 f"Unable to update Krisinformation notices: {err}"
             ) from err
+        include_smhi_weather_warnings = _entry_option(
+            self._entry,
+            CONF_INCLUDE_SMHI_WEATHER_WARNINGS,
+            INCLUDE_SMHI_WEATHER_WARNINGS_DEFAULT,
+        )
         filtered = (
             item
             for item in items
@@ -187,6 +200,7 @@ class KrisinformationNoticesCoordinator(DataUpdateCoordinator[tuple[NoticeItem, 
                     self._entry, CONF_INCLUDE_UNLOCATED, INCLUDE_UNLOCATED_DEFAULT
                 ),
             )
+            and (include_smhi_weather_warnings or not item.is_smhi_weather_warning)
         )
         filtered_items = tuple(filtered)
         if self._event_tracker:

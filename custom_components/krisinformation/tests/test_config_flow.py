@@ -21,6 +21,7 @@ from custom_components.krisinformation.const import (
     CONF_INCLUDE_NATIONAL,
     CONF_INCLUDE_NEWS,
     CONF_INCLUDE_NOTICES,
+    CONF_INCLUDE_SMHI_WEATHER_WARNINGS,
     CONF_INCLUDE_UNLOCATED,
     CONF_MAX_ITEMS,
     CONF_NEWS_DAYS,
@@ -74,6 +75,7 @@ class TestUserStep:
         assert result["data"][CONF_MUNICIPALITY] == "Stockholm"
         assert result["options"][CONF_INCLUDE_NEWS] is True
         assert result["options"][CONF_INCLUDE_NOTICES] is True
+        assert result["options"][CONF_INCLUDE_SMHI_WEATHER_WARNINGS] is True
         assert result["options"][CONF_NEWS_DAYS] == 7
         assert result["options"][CONF_MAX_ITEMS] == 10
 
@@ -151,6 +153,7 @@ class TestUserStep:
                     CONF_API_ENV: API_ENV_TEST,
                     CONF_INCLUDE_NEWS: True,
                     CONF_INCLUDE_NOTICES: False,
+                    CONF_INCLUDE_SMHI_WEATHER_WARNINGS: False,
                     CONF_NEWS_DAYS: 14,
                     CONF_MAX_ITEMS: 20,
                     CONF_INCLUDE_NATIONAL: False,
@@ -170,6 +173,7 @@ class TestUserStep:
         assert result["options"][CONF_SEVERITY_MIN] == "Severe"
         assert result["options"][CONF_API_ENV] == API_ENV_TEST
         assert result["options"][CONF_INCLUDE_NOTICES] is False
+        assert result["options"][CONF_INCLUDE_SMHI_WEATHER_WARNINGS] is False
         assert result["options"][CONF_NEWS_DAYS] == 14
         assert result["options"][CONF_MAX_ITEMS] == 20
         assert result["options"][CONF_INCLUDE_NATIONAL] is False
@@ -211,6 +215,7 @@ class TestOptionsFlow:
                 CONF_API_ENV: API_ENV_PRODUCTION,
                 CONF_INCLUDE_NEWS: False,
                 CONF_INCLUDE_NOTICES: True,
+                CONF_INCLUDE_SMHI_WEATHER_WARNINGS: False,
                 CONF_NEWS_DAYS: 14,
                 CONF_MAX_ITEMS: 25,
                 CONF_INCLUDE_NATIONAL: False,
@@ -223,6 +228,7 @@ class TestOptionsFlow:
         assert mock_config_entry.options[CONF_SEVERITY_MIN] == "Severe"
         assert mock_config_entry.options[CONF_INCLUDE_UPDATE_CANCEL] is True
         assert mock_config_entry.options[CONF_INCLUDE_NEWS] is False
+        assert mock_config_entry.options[CONF_INCLUDE_SMHI_WEATHER_WARNINGS] is False
         assert mock_config_entry.options[CONF_NEWS_DAYS] == 14
         assert mock_config_entry.options[CONF_MAX_ITEMS] == 25
 

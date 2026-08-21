@@ -24,6 +24,7 @@ from .const import (
     CONF_INCLUDE_NATIONAL,
     CONF_INCLUDE_NEWS,
     CONF_INCLUDE_NOTICES,
+    CONF_INCLUDE_SMHI_WEATHER_WARNINGS,
     CONF_INCLUDE_UNLOCATED,
     CONF_INCLUDE_UPDATE_CANCEL,
     CONF_LANGUAGE,
@@ -42,6 +43,7 @@ from .const import (
     INCLUDE_NATIONAL_DEFAULT,
     INCLUDE_NEWS_DEFAULT,
     INCLUDE_NOTICES_DEFAULT,
+    INCLUDE_SMHI_WEATHER_WARNINGS_DEFAULT,
     INCLUDE_UNLOCATED_DEFAULT,
     LANGUAGE_DEFAULT,
     MAX_ITEMS_DEFAULT,
@@ -252,6 +254,19 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             version=4,
         )
         _LOGGER.info("Migration to v4 successful for %s", entry.title)
+    if entry.version == 4:
+        _LOGGER.debug("Migrating config entry from v4 to v5 for %s", entry.title)
+        new_options = dict(entry.options)
+        new_options.setdefault(
+            CONF_INCLUDE_SMHI_WEATHER_WARNINGS,
+            INCLUDE_SMHI_WEATHER_WARNINGS_DEFAULT,
+        )
+        hass.config_entries.async_update_entry(
+            entry,
+            options=new_options,
+            version=5,
+        )
+        _LOGGER.info("Migration to v5 successful for %s", entry.title)
     return True
 
 

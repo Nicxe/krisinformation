@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 from datetime import timedelta
+import json
 import re
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
@@ -19,6 +21,7 @@ from custom_components.krisinformation.api import (
 )
 from custom_components.krisinformation.const import (
     INTEGRATION_VERSION,
+    CONF_INCLUDE_SMHI_WEATHER_WARNINGS,
     KRISINFORMATION_NEWS_URL,
     KRISINFORMATION_NOTICES_URL,
     NEWS_UPDATE_INTERVAL_SECONDS,
@@ -34,7 +37,12 @@ from custom_components.krisinformation.helpers import (
     county_code_for_location,
     county_name_for_location,
 )
-from custom_components.krisinformation.models import ContentArea, NewsItem, html_to_text
+from custom_components.krisinformation.models import (
+    ContentArea,
+    NewsItem,
+    NoticeItem,
+    html_to_text,
+)
 
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -139,6 +147,8 @@ async def test_notices_request_and_normalization(
         "icon": "notices_announcement",
         "right_aligned_icon": True,
     }
+    assert newest.is_smhi_weather_warning is False
+    assert newest.as_dict()["is_smhi_weather_warning"] is False
     query = parse_qs(urlparse(captured_url).query)
     assert query == {
         "allCounties": ["false"],
@@ -179,7 +189,7 @@ async def test_content_coordinators_are_independent(
             "include_notices": True,
         },
         entry_id="independent_sources",
-        version=4,
+        version=5,
     )
     mock_aiohttp.get(
         re.compile(rf"^{re.escape(KRISINFORMATION_NEWS_URL)}.*"), status=503
@@ -201,6 +211,62 @@ async def test_content_coordinators_are_independent(
     assert len(notices.data) == 1
     assert news.update_interval == timedelta(seconds=NEWS_UPDATE_INTERVAL_SECONDS)
     assert notices.update_interval == timedelta(seconds=NOTICES_UPDATE_INTERVAL_SECONDS)
+
+
+@pytest.mark.parametrize(
+    ("include_smhi_weather_warnings", "expected_identifiers"),
+    [
+        (True, ["notice-newer", "notice-older"]),
+        (False, ["notice-newer"]),
+    ],
+)
+async def test_notices_coordinator_option_filters_smhi_weather_warnings(
+    hass: HomeAssistant,
+    notices_response: list[dict[str, Any]],
+    include_smhi_weather_warnings: bool,
+    expected_identifiers: list[str],
+) -> None:
+    """Test SMHI warnings are filtered before sensors and lifecycle events."""
+    response = deepcopy(notices_response)
+    response[0]["Area"] = deepcopy(response[1]["Area"])
+    response[0]["Layout"]["Icon"] = "warning_SMHI_class_2"
+    items = tuple(
+        sorted(
+            (NoticeItem.from_api(item) for item in response),
+            key=lambda item: item.sort_datetime,
+            reverse=True,
+        )
+    )
+    assert items[1].is_smhi_weather_warning is True
+
+    client = MagicMock()
+    client.async_get_notices = AsyncMock(return_value=items)
+    event_tracker = MagicMock()
+    event_tracker.async_process = AsyncMock()
+    entry = MockConfigEntry(
+        domain="krisinformation",
+        data={"name": "Local", "municipality": "Göteborg"},
+        options={
+            "language": "sv-SE",
+            "include_notices": True,
+            CONF_INCLUDE_SMHI_WEATHER_WARNINGS: include_smhi_weather_warnings,
+            "max_items": 10,
+            "include_national": False,
+            "include_unlocated": False,
+        },
+        entry_id="local_notices",
+        version=5,
+    )
+    coordinator = KrisinformationNoticesCoordinator(hass, client, entry, event_tracker)
+
+    await coordinator.async_refresh()
+
+    assert coordinator.data is not None
+    assert [item.identifier for item in coordinator.data] == expected_identifiers
+    processed_items = event_tracker.async_process.await_args.args[1]
+    assert [item.identifier for item in processed_items] == expected_identifiers
+    scope = json.loads(event_tracker.async_process.await_args.kwargs["scope"])
+    assert scope["include_smhi_weather_warnings"] is include_smhi_weather_warnings
 
 
 def test_html_to_text_accepts_plain_and_html_content() -> None:
@@ -269,7 +335,7 @@ async def test_news_coordinator_applies_source_and_geographic_options(
             "include_unlocated": False,
         },
         entry_id="local_news",
-        version=4,
+        version=5,
     )
     coordinator = KrisinformationNewsCoordinator(hass, client, entry)
 
@@ -296,7 +362,7 @@ async def test_disabled_news_source_avoids_api_requests(
         data={"name": "VMA only", "municipality": "Hela Sverige"},
         options={"include_news": False},
         entry_id="vma_only",
-        version=4,
+        version=5,
     )
     coordinator = KrisinformationNewsCoordinator(hass, client, entry)
 

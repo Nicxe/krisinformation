@@ -22,6 +22,7 @@ from custom_components.krisinformation.const import (
     CONF_INCLUDE_NATIONAL,
     CONF_INCLUDE_NEWS,
     CONF_INCLUDE_NOTICES,
+    CONF_INCLUDE_SMHI_WEATHER_WARNINGS,
     CONF_INCLUDE_UNLOCATED,
     CONF_MAX_ITEMS,
     CONF_NEWS_DAYS,
@@ -37,6 +38,7 @@ _CONTENT_OPTIONS = {
     # VMA tests opt in to content explicitly so their network mocks remain isolated.
     CONF_INCLUDE_NEWS: False,
     CONF_INCLUDE_NOTICES: False,
+    CONF_INCLUDE_SMHI_WEATHER_WARNINGS: True,
     CONF_NEWS_DAYS: 7,
     CONF_MAX_ITEMS: 10,
     CONF_INCLUDE_NATIONAL: True,
@@ -74,7 +76,7 @@ def mock_config_entry() -> MockConfigEntry:
             CONF_API_ENV: API_ENV_PRODUCTION,
         },
         entry_id="test_entry_id",
-        version=4,
+        version=5,
     )
 
 
@@ -96,7 +98,7 @@ def mock_config_entry_hela_sverige() -> MockConfigEntry:
             CONF_API_ENV: API_ENV_PRODUCTION,
         },
         entry_id="test_entry_hela_sverige",
-        version=4,
+        version=5,
     )
 
 
@@ -118,7 +120,7 @@ def mock_config_entry_include_updates() -> MockConfigEntry:
             CONF_API_ENV: API_ENV_PRODUCTION,
         },
         entry_id="test_entry_with_updates",
-        version=4,
+        version=5,
     )
 
 
@@ -140,7 +142,7 @@ def mock_config_entry_severity_severe() -> MockConfigEntry:
             CONF_API_ENV: API_ENV_PRODUCTION,
         },
         entry_id="test_entry_severity_severe",
-        version=4,
+        version=5,
     )
 
 

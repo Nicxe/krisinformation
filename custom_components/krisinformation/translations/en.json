@@ -18,10 +18,14 @@
           "api_environment": "VMA API environment",
           "include_news": "Include news",
           "include_notices": "Include notices",
+          "include_smhi_weather_warnings": "Include SMHI weather warnings in notices",
           "news_days": "Days of news history",
           "max_items": "Maximum items per content source",
           "include_national": "Include national content",
           "include_unlocated": "Include content without a geographic tag"
+        },
+        "data_description": {
+          "include_smhi_weather_warnings": "Turn this off if you use SMHI Alerts and want to avoid duplicate weather warnings."
         }
       }
       ,
@@ -37,10 +41,14 @@
           "api_environment": "VMA API environment",
           "include_news": "Include news",
           "include_notices": "Include notices",
+          "include_smhi_weather_warnings": "Include SMHI weather warnings in notices",
           "news_days": "Days of news history",
           "max_items": "Maximum items per content source",
           "include_national": "Include national content",
           "include_unlocated": "Include content without a geographic tag"
+        },
+        "data_description": {
+          "include_smhi_weather_warnings": "Turn this off if you use SMHI Alerts and want to avoid duplicate weather warnings."
         }
       },
       "reload_notice": {
@@ -62,10 +70,14 @@
           "api_environment": "VMA API environment",
           "include_news": "Include news",
           "include_notices": "Include notices",
+          "include_smhi_weather_warnings": "Include SMHI weather warnings in notices",
           "news_days": "Days of news history",
           "max_items": "Maximum items per content source",
           "include_national": "Include national content",
           "include_unlocated": "Include content without a geographic tag"
+        },
+        "data_description": {
+          "include_smhi_weather_warnings": "Turn this off if you use SMHI Alerts and want to avoid duplicate weather warnings."
         }
       }
     }

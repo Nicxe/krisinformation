@@ -276,6 +276,13 @@ class NoticeItem:
     def sort_datetime(self) -> datetime:
         return self.changed or datetime.min.replace(tzinfo=timezone.utc)
 
+    @property
+    def is_smhi_weather_warning(self) -> bool:
+        """Return whether Krisinformation identifies this as an SMHI warning."""
+        return bool(
+            self.layout.icon and self.layout.icon.casefold().startswith("warning_smhi_")
+        )
+
     def as_dict(self) -> dict[str, Any]:
         return {
             "identifier": self.identifier,
@@ -293,6 +300,7 @@ class NoticeItem:
             "video_caption": self.video_caption,
             "youtube_id": self.youtube_id,
             "sort_order": self.sort_order,
+            "is_smhi_weather_warning": self.is_smhi_weather_warning,
             "layout": self.layout.as_dict(),
             "areas": [area.as_dict() for area in self.areas],
             "links": [link.as_dict() for link in self.links],
