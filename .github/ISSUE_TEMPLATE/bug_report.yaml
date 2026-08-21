@@ -1,0 +1,68 @@
+name: 🐞 Bug Report
+description: Report a problem with Krisinformation
+title: "[Bug]: "
+labels: ["bug"]
+assignees: ["Nicxe"]
+body:
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which part is affected?
+      options:
+        - Integration
+        - Card
+        - Both
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: prerequisites
+    attributes:
+      label: Prerequisites
+      options:
+        - label: I am running the latest release
+          required: true
+        - label: I have searched existing issues
+          required: true
+        - label: I have restarted Home Assistant
+          required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Release Version
+      placeholder: e.g. 1.2.3
+    validations:
+      required: true
+
+  - type: textarea
+    id: current_behavior
+    attributes:
+      label: Current Behavior
+      description: What is happening?
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected_behavior
+    attributes:
+      label: Expected Behavior
+      description: What should happen?
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ### Logs and diagnostics
+
+        For integration issues, enable debug logging before sharing logs.
+        For card issues, include your card configuration and browser console errors.
+
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Logs / Browser Console / Card Config
+      description: Paste relevant diagnostics here.
+      render: shell
