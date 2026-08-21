@@ -74,6 +74,12 @@
     "sensor": {
       "krisinformation": {
         "name": "Krisinformation Alerts"
+      },
+      "news": {
+        "name": "News"
+      },
+      "notices": {
+        "name": "Notices"
       }
     }
   }

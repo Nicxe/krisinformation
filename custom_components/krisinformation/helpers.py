@@ -38,6 +38,21 @@ def vma_device_identifier(entry_id: str) -> tuple[str, str]:
     return (DOMAIN, f"{entry_id}_vma")
 
 
+def content_device_identifier(entry_id: str) -> tuple[str, str]:
+    """Return the stable device identifier for Krisinformation content."""
+    return (DOMAIN, f"{entry_id}_content")
+
+
+def news_unique_id(entry_id: str) -> str:
+    """Return the stable unique ID for the news sensor."""
+    return f"{DOMAIN}_{entry_id}_news"
+
+
+def notices_unique_id(entry_id: str) -> str:
+    """Return the stable unique ID for the notices sensor."""
+    return f"{DOMAIN}_{entry_id}_notices"
+
+
 def county_code_for_location(location: str) -> str | None:
     """Return the county code used by Krisinformation for a configured location."""
     if location in COUNTY_MAPPING:

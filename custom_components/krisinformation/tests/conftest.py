@@ -34,8 +34,9 @@ from custom_components.krisinformation.const import (
 )
 
 _CONTENT_OPTIONS = {
-    CONF_INCLUDE_NEWS: True,
-    CONF_INCLUDE_NOTICES: True,
+    # VMA tests opt in to content explicitly so their network mocks remain isolated.
+    CONF_INCLUDE_NEWS: False,
+    CONF_INCLUDE_NOTICES: False,
     CONF_NEWS_DAYS: 7,
     CONF_MAX_ITEMS: 10,
     CONF_INCLUDE_NATIONAL: True,

@@ -89,10 +89,18 @@ INTEGRATION_VERSION = _load_manifest_version()
 EVENT_NEW_ALERT = f"{DOMAIN}_new_alert"
 EVENT_UPDATED_ALERT = f"{DOMAIN}_updated_alert"
 EVENT_CANCELED_ALERT = f"{DOMAIN}_canceled_alert"
+EVENT_NEW_NEWS = f"{DOMAIN}_new_news"
+EVENT_UPDATED_NEWS = f"{DOMAIN}_updated_news"
+EVENT_REMOVED_NEWS = f"{DOMAIN}_removed_news"
+EVENT_NEW_NOTICE = f"{DOMAIN}_new_notice"
+EVENT_UPDATED_NOTICE = f"{DOMAIN}_updated_notice"
+EVENT_REMOVED_NOTICE = f"{DOMAIN}_removed_notice"
 
 # Device info
 DEVICE_MANUFACTURER = "Sveriges Radio / MSB"
 DEVICE_MODEL = "VMA v3 API"
+CONTENT_DEVICE_MANUFACTURER = "Myndigheten för civilt försvar"
+CONTENT_DEVICE_MODEL = "Krisinformation API v3"
 
 # Severity ordering for filtering/aggregation
 SEVERITY_ORDER = ["Minor", "Moderate", "Severe", "Extreme"]

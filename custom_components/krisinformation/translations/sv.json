@@ -74,6 +74,12 @@
     "sensor": {
       "krisinformation": {
         "name": "Krisinformation VMA"
+      },
+      "news": {
+        "name": "Nyheter"
+      },
+      "notices": {
+        "name": "Notiser"
       }
     }
   }

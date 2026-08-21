@@ -170,6 +170,17 @@ async def test_content_coordinators_are_independent(
     notices_response: list[dict[str, Any]],
 ) -> None:
     """Test a news failure does not prevent notices from updating."""
+    entry = MockConfigEntry(
+        domain=mock_config_entry.domain,
+        data=dict(mock_config_entry.data),
+        options={
+            **mock_config_entry.options,
+            "include_news": True,
+            "include_notices": True,
+        },
+        entry_id="independent_sources",
+        version=4,
+    )
     mock_aiohttp.get(
         re.compile(rf"^{re.escape(KRISINFORMATION_NEWS_URL)}.*"), status=503
     )
@@ -178,8 +189,8 @@ async def test_content_coordinators_are_independent(
         payload=notices_response,
     )
     client = KrisinformationApiClient(async_get_clientsession(hass))
-    news = KrisinformationNewsCoordinator(hass, client, mock_config_entry)
-    notices = KrisinformationNoticesCoordinator(hass, client, mock_config_entry)
+    news = KrisinformationNewsCoordinator(hass, client, entry)
+    notices = KrisinformationNoticesCoordinator(hass, client, entry)
 
     await news.async_refresh()
     await notices.async_refresh()

@@ -12,6 +12,7 @@ if TYPE_CHECKING:
         KrisinformationNewsCoordinator,
         KrisinformationNoticesCoordinator,
     )
+    from .event_tracker import ContentEventTracker
 
 
 @dataclass
@@ -22,3 +23,4 @@ class KrisinformationRuntimeData:
     api_client: KrisinformationApiClient
     news_coordinator: KrisinformationNewsCoordinator
     notices_coordinator: KrisinformationNoticesCoordinator
+    event_tracker: ContentEventTracker

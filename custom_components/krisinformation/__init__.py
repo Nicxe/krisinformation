@@ -62,6 +62,7 @@ from .coordinator import (
     KrisinformationNewsCoordinator,
     KrisinformationNoticesCoordinator,
 )
+from .event_tracker import ContentEventTracker
 from .frontend import async_setup_frontend
 from .helpers import (
     legacy_location_slug,
@@ -115,11 +116,23 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     )
     await coordinator.async_config_entry_first_refresh()
     api_client = KrisinformationApiClient(session)
+    event_tracker = ContentEventTracker(hass, entry.entry_id)
+    await event_tracker.async_load()
+    news_coordinator = KrisinformationNewsCoordinator(
+        hass, api_client, entry, event_tracker
+    )
+    notices_coordinator = KrisinformationNoticesCoordinator(
+        hass, api_client, entry, event_tracker
+    )
     entry.runtime_data = KrisinformationRuntimeData(
         vma_coordinator=coordinator,
         api_client=api_client,
-        news_coordinator=KrisinformationNewsCoordinator(hass, api_client, entry),
-        notices_coordinator=KrisinformationNoticesCoordinator(hass, api_client, entry),
+        news_coordinator=news_coordinator,
+        notices_coordinator=notices_coordinator,
+        event_tracker=event_tracker,
+    )
+    await asyncio.gather(
+        news_coordinator.async_refresh(), notices_coordinator.async_refresh()
     )
 
     await hass.config_entries.async_forward_entry_setups(
