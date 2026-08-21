@@ -56,5 +56,5 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Check card syntax
-        run: node --experimental-default-type=module --check custom_components/krisinformation/www/krisinformation-alert-card.js
+      - name: Test card
+        run: ./scripts/run_card_tests.sh
