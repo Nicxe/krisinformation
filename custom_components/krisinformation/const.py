@@ -36,6 +36,8 @@ CONF_API_ENV = "api_environment"  # 'production' | 'test'
 MUNICIPALITY_DEFAULT = "Hela Sverige"
 LANGUAGE_DEFAULT = "sv-SE"
 UPDATE_INTERVAL_DEFAULT_SECONDS = 300
+VMA_UPDATE_INTERVAL_SECONDS = 60
+VMA_MAX_BACKOFF_SECONDS = 900
 INCLUDE_RESOURCES_DEFAULT = True
 ACTIVE_ONLY_DEFAULT = True
 INCLUDE_UPDATE_CANCEL_DEFAULT = False
@@ -77,6 +79,8 @@ DEVICE_MODEL = "VMA v3 API"
 
 # Severity ordering for filtering/aggregation
 SEVERITY_ORDER = ["Minor", "Moderate", "Severe", "Extreme"]
+VMA_PRODUCTION_STATUSES = frozenset({"Actual"})
+VMA_TEST_STATUSES = frozenset({"Actual", "Exercise", "Test"})
 
 __all__ = [
     "COUNTY_MAPPING",

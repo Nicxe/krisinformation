@@ -8,9 +8,10 @@ import re
 from aiohttp import ClientError, ClientResponseError
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import __version__ as HA_VERSION
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers import device_registry as dr, entity_registry as er
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
 
@@ -43,11 +44,20 @@ from .const import (
     TEST_BASE_URL,
     UPDATE_INTERVAL_DEFAULT_SECONDS,
     USER_AGENT_PRODUCT,
+    VMA_MAX_BACKOFF_SECONDS,
+    VMA_PRODUCTION_STATUSES,
+    VMA_TEST_STATUSES,
+    VMA_UPDATE_INTERVAL_SECONDS,
 )
+from .helpers import (
+    legacy_location_slug,
+    vma_active_unique_id,
+    vma_count_unique_id,
+    vma_device_identifier,
+)
+from .runtime_data import KrisinformationRuntimeData
 
 _LOGGER = logging.getLogger(__name__)
-DEFAULT_UPDATE_INTERVAL = 300  # 5 minuter
-
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 _RE_WHITESPACE = re.compile(r"\s+")
@@ -84,12 +94,13 @@ async def async_setup(hass, config):
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
+    await _async_migrate_registry_identifiers(hass, entry)
     session = async_get_clientsession(hass)
     coordinator = KrisinformationDataUpdateCoordinator(
-        hass, session, entry, timedelta(seconds=DEFAULT_UPDATE_INTERVAL)
+        hass, session, entry, timedelta(seconds=VMA_UPDATE_INTERVAL_SECONDS)
     )
     await coordinator.async_config_entry_first_refresh()
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
+    entry.runtime_data = KrisinformationRuntimeData(vma_coordinator=coordinator)
 
     await hass.config_entries.async_forward_entry_setups(
         entry, ["sensor", "binary_sensor"]
@@ -107,8 +118,41 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
         entry, ["sensor", "binary_sensor"]
     )
     if unload_ok:
-        hass.data[DOMAIN].pop(entry.entry_id)
+        entry.runtime_data = None
     return unload_ok
+
+
+async def _async_migrate_registry_identifiers(
+    hass: HomeAssistant, entry: ConfigEntry
+) -> None:
+    """Migrate location-dependent entity and device identifiers."""
+    municipality = entry.data.get(CONF_MUNICIPALITY, MUNICIPALITY_DEFAULT)
+    legacy_slug = legacy_location_slug(municipality)
+    legacy_unique_ids = {
+        f"krisinformation_sensor_{legacy_slug}_{entry.entry_id}": vma_count_unique_id(
+            entry.entry_id
+        ),
+        f"krisinformation_active_{legacy_slug}_{entry.entry_id}": vma_active_unique_id(
+            entry.entry_id
+        ),
+    }
+
+    @callback
+    def _migrate_entity(entity_entry: er.RegistryEntry) -> dict[str, str] | None:
+        if new_unique_id := legacy_unique_ids.get(entity_entry.unique_id):
+            return {"new_unique_id": new_unique_id}
+        return None
+
+    await er.async_migrate_entries(hass, entry.entry_id, _migrate_entity)
+
+    device_registry = dr.async_get(hass)
+    legacy_identifier = (DOMAIN, f"{legacy_slug}_{entry.entry_id}")
+    if device := device_registry.async_get_device(identifiers={legacy_identifier}):
+        device_registry.async_update_device(
+            device.id,
+            new_identifiers=(device.identifiers - {legacy_identifier})
+            | {vma_device_identifier(entry.entry_id)},
+        )
 
 
 async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -165,14 +209,9 @@ class KrisinformationDataUpdateCoordinator(DataUpdateCoordinator):
         self.config = config_entry.data
         self.options = config_entry.options
 
-        # Caching / conditional requests
-        self._etag: Optional[str] = None
-        self._last_modified: Optional[str] = None
-        self._since_iso: Optional[str] = None
-
         # State tracking for events
-        self._identifier_to_msgtype: Dict[str, str] = {}
-        self._last_alert_sent: Optional[str] = None
+        self._incident_state: Dict[str, Dict[str, Any]] = {}
+        self._events_initialized = False
 
         self._user_agent = self._compose_user_agent()
 
@@ -189,6 +228,7 @@ class KrisinformationDataUpdateCoordinator(DataUpdateCoordinator):
         return self._get_effective_option(CONF_LANGUAGE, LANGUAGE_DEFAULT)
 
     def _get_filters(self) -> Dict[str, Any]:
+        environment = self._get_effective_option(CONF_API_ENV, API_ENV_PRODUCTION)
         return {
             "active_only": True,  # Always enforce active-only per design
             "include_update_cancel": self._get_effective_option(
@@ -197,6 +237,9 @@ class KrisinformationDataUpdateCoordinator(DataUpdateCoordinator):
             "severity_min": self._get_effective_option(
                 CONF_SEVERITY_MIN, SEVERITY_MIN_DEFAULT
             ),
+            "statuses": VMA_TEST_STATUSES
+            if environment == API_ENV_TEST
+            else VMA_PRODUCTION_STATUSES,
         }
 
     def _compose_url_and_params(self) -> Tuple[str, Dict[str, str]]:
@@ -208,8 +251,6 @@ class KrisinformationDataUpdateCoordinator(DataUpdateCoordinator):
         params: Dict[str, str] = {}
         if geocode:
             params["geocode"] = geocode
-        if self._since_iso:
-            params["since"] = self._since_iso
         return url, params
 
     def _compose_user_agent(self) -> str:
@@ -221,12 +262,7 @@ class KrisinformationDataUpdateCoordinator(DataUpdateCoordinator):
         return ua
 
     def _build_headers(self) -> Dict[str, str]:
-        headers = {"User-Agent": self._user_agent, "Accept": "application/json"}
-        if self._etag:
-            headers["If-None-Match"] = self._etag
-        if self._last_modified:
-            headers["If-Modified-Since"] = self._last_modified
-        return headers
+        return {"User-Agent": self._user_agent, "Accept": "application/json"}
 
     async def _async_update_data(self):
         url, params = self._compose_url_and_params()
@@ -236,18 +272,8 @@ class KrisinformationDataUpdateCoordinator(DataUpdateCoordinator):
                 async with self.session.get(
                     url, params=params, headers=headers
                 ) as response:
-                    if response.status == 304:
-                        # Not modified: return previous data
-                        _LOGGER.debug("304 Not Modified from VMA API")
-                        return self.data or {}
-
                     if response.status == 429:
                         retry_after = response.headers.get("Retry-After")
-                        _LOGGER.warning(
-                            "429 Too Many Requests from VMA API, Retry-After=%s",
-                            retry_after,
-                        )
-                        # Use Retry-After if provided, otherwise exponential backoff
                         if retry_after:
                             try:
                                 wait_seconds = int(retry_after)
@@ -255,60 +281,31 @@ class KrisinformationDataUpdateCoordinator(DataUpdateCoordinator):
                                 wait_seconds = self.update_interval.total_seconds() * 2
                         else:
                             wait_seconds = self.update_interval.total_seconds() * 2
-                        self.update_interval = timedelta(seconds=min(900, wait_seconds))
-                        return self.data or {}
+                        wait_seconds = min(VMA_MAX_BACKOFF_SECONDS, wait_seconds)
+                        self.update_interval = timedelta(seconds=wait_seconds)
+                        raise UpdateFailed(
+                            f"VMA API rate limited requests; retrying in {wait_seconds:g} seconds"
+                        )
 
                     response.raise_for_status()
-
-                    # Capture caching headers
-                    self._etag = response.headers.get("ETag") or self._etag
-                    self._last_modified = (
-                        response.headers.get("Last-Modified") or self._last_modified
-                    )
-                    cache_control = response.headers.get("Cache-Control", "")
-
-                    # Adjust polling interval if max-age present
-                    if "max-age=" in cache_control:
-                        try:
-                            max_age = int(
-                                cache_control.split("max-age=")[1].split(",")[0]
-                            )
-                            # Keep sensible bounds
-                            self.update_interval = timedelta(
-                                seconds=max(60, min(600, max_age))
-                            )
-                        except Exception:  # noqa: BLE001
-                            pass
-                    elif self.update_interval > self._default_update_interval:
-                        # Gradually recover from backoff after successful request
-                        recovered_seconds = max(
-                            self._default_update_interval.total_seconds(),
-                            self.update_interval.total_seconds() / 2,
-                        )
-                        self.update_interval = timedelta(seconds=recovered_seconds)
-                        _LOGGER.debug(
-                            "Recovering from backoff, interval now %s seconds",
-                            recovered_seconds,
-                        )
-
                     data = await response.json()
         except asyncio.TimeoutError as err:
-            _LOGGER.warning(
-                "Timeout vid anrop till VMA API (tidsgräns %ss)",
-                DEFAULT_TIMEOUT_SECONDS,
-            )
-            raise UpdateFailed("API-anrop tog för lång tid") from err
+            raise UpdateFailed(
+                f"VMA API request timed out after {DEFAULT_TIMEOUT_SECONDS} seconds"
+            ) from err
+        except UpdateFailed:
+            raise
         except ClientResponseError as err:
-            _LOGGER.warning(
-                "HTTP-fel %s vid anrop till VMA API: %s", err.status, err.message
-            )
-            raise UpdateFailed(f"HTTP-fel {err.status}: {err.message}") from err
+            raise UpdateFailed(
+                f"VMA API returned HTTP {err.status}: {err.message}"
+            ) from err
         except ClientError as err:
-            _LOGGER.warning("Nätverksfel vid anrop till VMA API: %s", err)
-            raise UpdateFailed(f"Nätverksfel: {err}") from err
+            raise UpdateFailed(f"VMA API network error: {err}") from err
         except Exception as err:  # noqa: BLE001
-            _LOGGER.exception("Oväntat fel vid anrop till VMA API")
-            raise UpdateFailed(f"Oväntat fel: {err}") from err
+            raise UpdateFailed(f"Unexpected VMA API error: {err}") from err
+
+        if self.update_interval != self._default_update_interval:
+            self.update_interval = self._default_update_interval
 
         # Normalize and filter
         language = self._get_language()
@@ -316,18 +313,12 @@ class KrisinformationDataUpdateCoordinator(DataUpdateCoordinator):
         normalized = self._normalize_data(data, language)
         active_alerts = self._apply_filters(normalized, filters)
 
-        # Emit events comparing with last state (always, regardless of sensor filters)
-        self._emit_events(previous=self._identifier_to_msgtype, current=normalized)
-        # Update internal map for next diff
-        self._identifier_to_msgtype = {
-            a["identifier"]: a.get("msgType", "") for a in normalized
-        }
-
-        # Advance since cursor using latest sent
-        latest_sent = self._extract_latest_sent_iso(normalized)
-        if latest_sent and latest_sent != self._last_alert_sent:
-            self._since_iso = latest_sent
-            self._last_alert_sent = latest_sent
+        # Events use the complete unfiltered CAP snapshot so sensor preferences do not
+        # suppress lifecycle notifications.
+        event_alerts = [
+            alert for alert in normalized if alert.get("status") in filters["statuses"]
+        ]
+        self._emit_events(event_alerts)
 
         return {"alerts": active_alerts}
 
@@ -360,6 +351,7 @@ class KrisinformationDataUpdateCoordinator(DataUpdateCoordinator):
                     "scope": alert.get("scope"),
                     "references": alert.get("references"),
                     "note": alert.get("note"),
+                    "incidents": alert.get("incidents"),
                     "sent": alert.get("sent"),
                     "info": {
                         "language": info_obj.get("language") if info_obj else None,
@@ -384,6 +376,10 @@ class KrisinformationDataUpdateCoordinator(DataUpdateCoordinator):
                         if info_obj
                         else None,
                         "contact": info_obj.get("contact") if info_obj else None,
+                        "senderName": info_obj.get("senderName") if info_obj else None,
+                        "parameters": (info_obj.get("parameters") or [])
+                        if info_obj
+                        else [],
                         "web": info_obj.get("web") if info_obj else None,
                         "area": area_list or [],
                         "resource": resources or [],
@@ -398,6 +394,7 @@ class KrisinformationDataUpdateCoordinator(DataUpdateCoordinator):
         active_only: bool = filters.get("active_only", True)
         include_update_cancel: bool = filters.get("include_update_cancel", False)
         severity_min: str = filters.get("severity_min", SEVERITY_MIN_DEFAULT)
+        statuses: frozenset[str] = filters.get("statuses", VMA_PRODUCTION_STATUSES)
         min_index = (
             SEVERITY_ORDER.index(severity_min) if severity_min in SEVERITY_ORDER else 0
         )
@@ -434,6 +431,8 @@ class KrisinformationDataUpdateCoordinator(DataUpdateCoordinator):
 
         result: List[Dict[str, Any]] = []
         for a in alerts:
+            if a.get("status") not in statuses:
+                continue
             msg_type = a.get("msgType")
             if not include_update_cancel and msg_type in {"Update", "Cancel"}:
                 continue
@@ -459,37 +458,60 @@ class KrisinformationDataUpdateCoordinator(DataUpdateCoordinator):
         except Exception:  # noqa: BLE001
             return None
 
-    def _extract_latest_sent_iso(self, alerts: List[Dict[str, Any]]) -> Optional[str]:
-        latest: Optional[datetime] = None
-        latest_str: Optional[str] = None
-        for a in alerts:
-            s = a.get("sent")
-            dt = self._parse_iso(s)
-            if dt and (latest is None or dt > latest):
-                latest = dt
-                latest_str = s
-        return latest_str
+    @staticmethod
+    def _incident_key(alert: Dict[str, Any]) -> str | None:
+        """Return a stable lifecycle key for a CAP alert."""
+        if incidents := str(alert.get("incidents") or "").split():
+            return " ".join(sorted(incidents))
 
-    def _emit_events(
-        self,
-        previous: Dict[str, str],
-        current: List[Dict[str, Any]],
-    ) -> None:
-        curr_map = {a["identifier"]: a for a in current if a.get("identifier")}
-        prev_ids = set(previous.keys())
-        curr_ids = set(curr_map.keys())
+        if references := str(alert.get("references") or "").split():
+            referenced_ids = []
+            for reference in references:
+                parts = reference.split(",")
+                referenced_ids.append(parts[1] if len(parts) > 1 else parts[0])
+            return " ".join(sorted(referenced_ids))
 
-        # New
-        for new_id in curr_ids - prev_ids:
-            alert = curr_map[new_id]
+        identifier = alert.get("identifier")
+        return str(identifier) if identifier else None
+
+    def _emit_events(self, current: List[Dict[str, Any]]) -> None:
+        """Emit VMA lifecycle events after the initial snapshot is established."""
+        current_state = {
+            incident_key: alert
+            for alert in current
+            if (incident_key := self._incident_key(alert))
+        }
+
+        if not self._events_initialized:
+            self._incident_state = current_state
+            self._events_initialized = True
+            return
+
+        previous_state = self._incident_state
+        for incident_key, alert in current_state.items():
+            previous = previous_state.get(incident_key)
+            if previous and (
+                previous.get("identifier") == alert.get("identifier")
+                and previous.get("msgType") == alert.get("msgType")
+            ):
+                continue
+
             if alert.get("msgType") == "Alert":
                 self.hass.bus.async_fire(EVENT_NEW_ALERT, alert)
+            elif alert.get("msgType") == "Update":
+                self.hass.bus.async_fire(EVENT_UPDATED_ALERT, alert)
+            elif alert.get("msgType") == "Cancel":
+                self.hass.bus.async_fire(EVENT_CANCELED_ALERT, alert)
 
-        # Updated / Canceled
-        for common_id in curr_ids & prev_ids:
-            prev_type = previous.get(common_id)
-            curr_type = curr_map[common_id].get("msgType")
-            if curr_type == "Update" and prev_type != "Update":
-                self.hass.bus.async_fire(EVENT_UPDATED_ALERT, curr_map[common_id])
-            if curr_type == "Cancel" and prev_type != "Cancel":
-                self.hass.bus.async_fire(EVENT_CANCELED_ALERT, curr_map[common_id])
+        for incident_key in previous_state.keys() - current_state.keys():
+            previous = previous_state[incident_key]
+            if previous.get("msgType") == "Cancel":
+                continue
+            canceled = {
+                **previous,
+                "msgType": "Cancel",
+                "references": previous.get("identifier"),
+            }
+            self.hass.bus.async_fire(EVENT_CANCELED_ALERT, canceled)
+
+        self._incident_state = current_state

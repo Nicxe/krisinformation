@@ -195,21 +195,20 @@ class TestSensorUniqueId:
 
         unique_id = sensor.unique_id
 
-        assert unique_id.startswith("krisinformation_sensor_")
-        assert mock_config_entry.entry_id in unique_id
+        assert unique_id == f"krisinformation_{mock_config_entry.entry_id}_vma_count"
 
-    async def test_sensor_unique_id_sanitizes_swedish_chars(
+    async def test_sensor_unique_id_is_independent_of_location(
         self,
         hass: HomeAssistant,
     ) -> None:
-        """Test unique_id sanitizes Swedish characters."""
+        """Test changing a location does not change the stable unique ID."""
         from custom_components.krisinformation.sensor import KrisinformationCountSensor
 
         # Create entry with Swedish municipality name
         entry = MockConfigEntry(
             domain=DOMAIN,
             data={"name": "Test", "municipality": "Malmö"},
-            entry_id="test_malmo",
+            entry_id="stable_entry",
             version=3,
         )
         entry.add_to_hass(hass)
@@ -222,9 +221,8 @@ class TestSensorUniqueId:
 
         unique_id = sensor.unique_id
 
-        # Swedish ö should be replaced with o
-        assert "ö" not in unique_id
-        assert "malmo" in unique_id
+        assert unique_id == "krisinformation_stable_entry_vma_count"
+        assert "malmo" not in unique_id
 
 
 class TestSensorDeviceInfo:

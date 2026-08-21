@@ -45,8 +45,11 @@ class TestCoordinatorSetup:
         await hass.async_block_till_done()
 
         assert result is True
-        assert DOMAIN in hass.data
-        assert mock_config_entry.entry_id in hass.data[DOMAIN]
+        assert mock_config_entry.runtime_data.vma_coordinator is not None
+        assert (
+            mock_config_entry.runtime_data.vma_coordinator.update_interval
+            == timedelta(seconds=60)
+        )
 
     async def test_unload_entry(
         self,
@@ -55,7 +58,7 @@ class TestCoordinatorSetup:
         mock_aiohttp: aioresponses,
         empty_response: dict[str, Any],
     ) -> None:
-        """Test unload removes coordinator from hass.data."""
+        """Test unload releases runtime data."""
         mock_aiohttp.get(
             re.compile(rf"^{re.escape(PRODUCTION_BASE_URL)}.*"),
             payload=empty_response,
@@ -69,7 +72,53 @@ class TestCoordinatorSetup:
         await hass.async_block_till_done()
 
         assert result is True
-        assert mock_config_entry.entry_id not in hass.data.get(DOMAIN, {})
+        assert not hasattr(mock_config_entry, "runtime_data")
+
+    async def test_legacy_registry_identifiers_are_migrated(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry: MockConfigEntry,
+        mock_aiohttp: aioresponses,
+        empty_response: dict[str, Any],
+    ) -> None:
+        """Test existing entity IDs and devices survive stable-ID migration."""
+        from homeassistant.helpers import device_registry as dr
+        from homeassistant.helpers import entity_registry as er
+
+        mock_config_entry.add_to_hass(hass)
+        entity_registry = er.async_get(hass)
+        device_registry = dr.async_get(hass)
+        legacy_device = device_registry.async_get_or_create(
+            config_entry_id=mock_config_entry.entry_id,
+            identifiers={(DOMAIN, f"stockholm_{mock_config_entry.entry_id}")},
+        )
+        legacy_entity = entity_registry.async_get_or_create(
+            "sensor",
+            DOMAIN,
+            f"krisinformation_sensor_stockholm_{mock_config_entry.entry_id}",
+            config_entry=mock_config_entry,
+            device_id=legacy_device.id,
+            suggested_object_id="krisinformation_stockholm",
+        )
+        original_entity_id = legacy_entity.entity_id
+        mock_aiohttp.get(
+            re.compile(rf"^{re.escape(PRODUCTION_BASE_URL)}.*"),
+            payload=empty_response,
+        )
+
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        migrated_entity = entity_registry.async_get(original_entity_id)
+        migrated_device = device_registry.async_get(legacy_device.id)
+        assert migrated_entity is not None
+        assert migrated_entity.unique_id == (
+            f"krisinformation_{mock_config_entry.entry_id}_vma_count"
+        )
+        assert migrated_device is not None
+        assert migrated_device.identifiers == {
+            (DOMAIN, f"{mock_config_entry.entry_id}_vma")
+        }
 
 
 class TestAPIRequests:
@@ -167,133 +216,42 @@ class TestAPIRequests:
         assert "geocode" not in params or params.get("geocode") == ""
 
 
-class TestConditionalRequests:
-    """Test ETag and Last-Modified conditional request handling."""
+class TestRequestContract:
+    """Test requests follow the documented SR VMA v3 contract."""
 
-    async def test_etag_stored_from_response(
-        self,
-        hass: HomeAssistant,
-        mock_config_entry: MockConfigEntry,
-        mock_aiohttp: aioresponses,
-        empty_response: dict[str, Any],
-    ) -> None:
-        """Test ETag is stored from response headers."""
-        mock_aiohttp.get(
-            re.compile(rf"^{re.escape(PRODUCTION_BASE_URL)}.*"),
-            payload=empty_response,
-            headers={"ETag": '"test-etag-123"'},
-        )
-
-        mock_config_entry.add_to_hass(hass)
-
-        await hass.config_entries.async_setup(mock_config_entry.entry_id)
-        await hass.async_block_till_done()
-        coordinator = hass.data[DOMAIN][mock_config_entry.entry_id]
-
-        assert coordinator._etag == '"test-etag-123"'
-
-    async def test_last_modified_stored_from_response(
-        self,
-        hass: HomeAssistant,
-        mock_config_entry: MockConfigEntry,
-        mock_aiohttp: aioresponses,
-        empty_response: dict[str, Any],
-    ) -> None:
-        """Test Last-Modified is stored from response headers."""
-        mock_aiohttp.get(
-            re.compile(rf"^{re.escape(PRODUCTION_BASE_URL)}.*"),
-            payload=empty_response,
-            headers={"Last-Modified": "Mon, 15 Jan 2024 10:00:00 GMT"},
-        )
-
-        mock_config_entry.add_to_hass(hass)
-
-        await hass.config_entries.async_setup(mock_config_entry.entry_id)
-        await hass.async_block_till_done()
-        coordinator = hass.data[DOMAIN][mock_config_entry.entry_id]
-
-        assert coordinator._last_modified == "Mon, 15 Jan 2024 10:00:00 GMT"
-
-    async def test_if_none_match_header_sent(
+    async def test_request_uses_only_documented_headers(
         self,
         hass: HomeAssistant,
         mock_config_entry: MockConfigEntry,
     ) -> None:
-        """Test If-None-Match header sent when ETag is stored."""
+        """Test requests do not send unsupported conditional headers."""
         from custom_components.krisinformation import (
             KrisinformationDataUpdateCoordinator,
         )
 
-        mock_config_entry.add_to_hass(hass)
-        session = MagicMock()
-
         coordinator = KrisinformationDataUpdateCoordinator(
-            hass, session, mock_config_entry, timedelta(seconds=300)
+            hass, MagicMock(), mock_config_entry, timedelta(seconds=300)
         )
-        coordinator._etag = '"stored-etag"'
 
-        headers = coordinator._build_headers()
+        assert set(coordinator._build_headers()) == {"Accept", "User-Agent"}
 
-        assert "If-None-Match" in headers
-        assert headers["If-None-Match"] == '"stored-etag"'
-
-    async def test_if_modified_since_header_sent(
+    async def test_request_uses_only_documented_query_parameters(
         self,
         hass: HomeAssistant,
         mock_config_entry: MockConfigEntry,
     ) -> None:
-        """Test If-Modified-Since header sent when Last-Modified is stored."""
+        """Test geocode is the only query parameter sent to SR."""
         from custom_components.krisinformation import (
             KrisinformationDataUpdateCoordinator,
         )
 
-        mock_config_entry.add_to_hass(hass)
-        session = MagicMock()
-
         coordinator = KrisinformationDataUpdateCoordinator(
-            hass, session, mock_config_entry, timedelta(seconds=300)
-        )
-        coordinator._last_modified = "Mon, 15 Jan 2024 10:00:00 GMT"
-
-        headers = coordinator._build_headers()
-
-        assert "If-Modified-Since" in headers
-        assert headers["If-Modified-Since"] == "Mon, 15 Jan 2024 10:00:00 GMT"
-
-    async def test_304_not_modified_returns_cached_data(
-        self,
-        hass: HomeAssistant,
-        mock_config_entry: MockConfigEntry,
-        mock_aiohttp: aioresponses,
-        single_alert_response: dict[str, Any],
-    ) -> None:
-        """Test 304 response returns previously cached data."""
-        # First request returns data
-        mock_aiohttp.get(
-            re.compile(rf"^{re.escape(PRODUCTION_BASE_URL)}.*"),
-            payload=single_alert_response,
-            headers={"ETag": '"etag-1"'},
-        )
-        # Second request returns 304
-        mock_aiohttp.get(
-            re.compile(rf"^{re.escape(PRODUCTION_BASE_URL)}.*"),
-            status=304,
+            hass, MagicMock(), mock_config_entry, timedelta(seconds=300)
         )
 
-        mock_config_entry.add_to_hass(hass)
+        _, params = coordinator._compose_url_and_params()
 
-        await hass.config_entries.async_setup(mock_config_entry.entry_id)
-        await hass.async_block_till_done()
-        coordinator = hass.data[DOMAIN][mock_config_entry.entry_id]
-
-        initial_data = coordinator.data
-        assert initial_data is not None
-
-        # Trigger refresh that gets 304
-        await coordinator.async_refresh()
-
-        # Data should be unchanged
-        assert coordinator.data == initial_data
+        assert set(params) == {"geocode"}
 
 
 class TestRateLimiting:
@@ -323,7 +281,7 @@ class TestRateLimiting:
 
         await hass.config_entries.async_setup(mock_config_entry.entry_id)
         await hass.async_block_till_done()
-        coordinator = hass.data[DOMAIN][mock_config_entry.entry_id]
+        coordinator = mock_config_entry.runtime_data.vma_coordinator
 
         original_interval = coordinator.update_interval
 
@@ -331,6 +289,7 @@ class TestRateLimiting:
 
         # Interval should have increased
         assert coordinator.update_interval > original_interval
+        assert coordinator.last_update_success is False
 
     async def test_429_max_interval_capped(
         self,
@@ -356,7 +315,7 @@ class TestRateLimiting:
 
         await hass.config_entries.async_setup(mock_config_entry.entry_id)
         await hass.async_block_till_done()
-        coordinator = hass.data[DOMAIN][mock_config_entry.entry_id]
+        coordinator = mock_config_entry.runtime_data.vma_coordinator
 
         # Trigger multiple 429s
         for _ in range(5):
@@ -366,77 +325,29 @@ class TestRateLimiting:
         assert coordinator.update_interval.total_seconds() <= 900
 
 
-class TestCacheControl:
-    """Test Cache-Control header handling."""
+class TestPolling:
+    """Test explicit polling behavior."""
 
-    async def test_cache_control_max_age_updates_interval(
+    async def test_cache_control_does_not_override_polling_interval(
         self,
         hass: HomeAssistant,
         mock_config_entry: MockConfigEntry,
         mock_aiohttp: aioresponses,
         empty_response: dict[str, Any],
     ) -> None:
-        """Test max-age value updates the update interval."""
+        """Test the integration controls polling rather than response cache headers."""
         mock_aiohttp.get(
             re.compile(rf"^{re.escape(PRODUCTION_BASE_URL)}.*"),
             payload=empty_response,
-            headers={"Cache-Control": "max-age=180"},
+            headers={"Cache-Control": "public,max-age=5"},
         )
-
         mock_config_entry.add_to_hass(hass)
 
         await hass.config_entries.async_setup(mock_config_entry.entry_id)
         await hass.async_block_till_done()
-        coordinator = hass.data[DOMAIN][mock_config_entry.entry_id]
 
-        # Interval should be set to 180 seconds
-        assert coordinator.update_interval.total_seconds() == 180
-
-    async def test_cache_control_max_age_min_bound(
-        self,
-        hass: HomeAssistant,
-        mock_config_entry: MockConfigEntry,
-        mock_aiohttp: aioresponses,
-        empty_response: dict[str, Any],
-    ) -> None:
-        """Test max-age below 60 is bounded to 60."""
-        mock_aiohttp.get(
-            re.compile(rf"^{re.escape(PRODUCTION_BASE_URL)}.*"),
-            payload=empty_response,
-            headers={"Cache-Control": "max-age=30"},
-        )
-
-        mock_config_entry.add_to_hass(hass)
-
-        await hass.config_entries.async_setup(mock_config_entry.entry_id)
-        await hass.async_block_till_done()
-        coordinator = hass.data[DOMAIN][mock_config_entry.entry_id]
-
-        # Interval should be bounded at minimum 60 seconds
-        assert coordinator.update_interval.total_seconds() >= 60
-
-    async def test_cache_control_max_age_max_bound(
-        self,
-        hass: HomeAssistant,
-        mock_config_entry: MockConfigEntry,
-        mock_aiohttp: aioresponses,
-        empty_response: dict[str, Any],
-    ) -> None:
-        """Test max-age above 600 is bounded to 600."""
-        mock_aiohttp.get(
-            re.compile(rf"^{re.escape(PRODUCTION_BASE_URL)}.*"),
-            payload=empty_response,
-            headers={"Cache-Control": "max-age=1000"},
-        )
-
-        mock_config_entry.add_to_hass(hass)
-
-        await hass.config_entries.async_setup(mock_config_entry.entry_id)
-        await hass.async_block_till_done()
-        coordinator = hass.data[DOMAIN][mock_config_entry.entry_id]
-
-        # Interval should be bounded at maximum 600 seconds
-        assert coordinator.update_interval.total_seconds() <= 600
+        coordinator = mock_config_entry.runtime_data.vma_coordinator
+        assert coordinator.update_interval == timedelta(seconds=60)
 
 
 class TestDataNormalization:
@@ -520,6 +431,53 @@ class TestDataNormalization:
 
 class TestFiltering:
     """Test alert filtering functionality."""
+
+    async def test_production_excludes_test_and_exercise_messages(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry: MockConfigEntry,
+        single_alert_response: dict[str, Any],
+    ) -> None:
+        """Test only actual public announcements are exposed in production."""
+        from custom_components.krisinformation import (
+            KrisinformationDataUpdateCoordinator,
+        )
+
+        coordinator = KrisinformationDataUpdateCoordinator(
+            hass, MagicMock(), mock_config_entry, timedelta(seconds=60)
+        )
+        normalized = coordinator._normalize_data(single_alert_response, "sv-SE")
+
+        for status in ("Test", "Exercise"):
+            normalized[0]["status"] = status
+            assert (
+                coordinator._apply_filters(normalized, coordinator._get_filters()) == []
+            )
+
+    async def test_test_environment_includes_test_messages(
+        self,
+        hass: HomeAssistant,
+        single_alert_response: dict[str, Any],
+    ) -> None:
+        """Test the SR test environment remains useful for development."""
+        from custom_components.krisinformation import (
+            KrisinformationDataUpdateCoordinator,
+        )
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data={"name": "Test", "municipality": "Hela Sverige"},
+            options={"api_environment": "test"},
+            entry_id="test_environment_entry",
+            version=3,
+        )
+        coordinator = KrisinformationDataUpdateCoordinator(
+            hass, MagicMock(), entry, timedelta(seconds=60)
+        )
+        normalized = coordinator._normalize_data(single_alert_response, "sv-SE")
+        normalized[0]["status"] = "Test"
+
+        assert coordinator._apply_filters(normalized, coordinator._get_filters())
 
     async def test_filter_excludes_update_cancel_by_default(
         self,
@@ -662,14 +620,14 @@ class TestErrorHandling:
 class TestEvents:
     """Test event emission."""
 
-    async def test_new_alert_event_fired(
+    async def test_initial_snapshot_does_not_fire_events(
         self,
         hass: HomeAssistant,
         mock_config_entry: MockConfigEntry,
         mock_aiohttp: aioresponses,
         single_alert_response: dict[str, Any],
     ) -> None:
-        """Test krisinformation_new_alert event fired for new alerts."""
+        """Test existing alerts are not announced again during startup."""
         mock_aiohttp.get(
             re.compile(rf"^{re.escape(PRODUCTION_BASE_URL)}.*"),
             payload=single_alert_response,
@@ -687,5 +645,63 @@ class TestEvents:
         await hass.config_entries.async_setup(mock_config_entry.entry_id)
         await hass.async_block_till_done()
 
-        assert len(events) == 1
-        assert events[0].data["identifier"] == "alert-001"
+        assert events == []
+
+    async def test_new_alert_after_initial_snapshot_fires_event(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry: MockConfigEntry,
+        single_alert_response: dict[str, Any],
+    ) -> None:
+        """Test alerts added after startup fire a new-alert event."""
+        from custom_components.krisinformation import (
+            KrisinformationDataUpdateCoordinator,
+        )
+
+        coordinator = KrisinformationDataUpdateCoordinator(
+            hass, MagicMock(), mock_config_entry, timedelta(seconds=60)
+        )
+        normalized = coordinator._normalize_data(single_alert_response, "sv-SE")
+        events = []
+        hass.bus.async_listen("krisinformation_new_alert", events.append)
+
+        coordinator._emit_events([])
+        coordinator._emit_events(normalized)
+        await hass.async_block_till_done()
+
+        assert [event.data["identifier"] for event in events] == ["alert-001"]
+
+    async def test_update_and_cancel_use_incident_identifier(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry: MockConfigEntry,
+        single_alert_response: dict[str, Any],
+        update_cancel_response: dict[str, Any],
+    ) -> None:
+        """Test CAP identifiers can change while the VMA incident stays stable."""
+        from custom_components.krisinformation import (
+            KrisinformationDataUpdateCoordinator,
+        )
+
+        coordinator = KrisinformationDataUpdateCoordinator(
+            hass, MagicMock(), mock_config_entry, timedelta(seconds=60)
+        )
+        initial = coordinator._normalize_data(single_alert_response, "sv-SE")
+        lifecycle = coordinator._normalize_data(update_cancel_response, "sv-SE")
+        canceled = {**lifecycle[1], "incidents": "incident-001"}
+        updated_events = []
+        canceled_events = []
+        hass.bus.async_listen("krisinformation_updated_alert", updated_events.append)
+        hass.bus.async_listen("krisinformation_canceled_alert", canceled_events.append)
+
+        coordinator._emit_events(initial)
+        coordinator._emit_events([lifecycle[0]])
+        coordinator._emit_events([canceled])
+        await hass.async_block_till_done()
+
+        assert [event.data["identifier"] for event in updated_events] == [
+            "alert-update-001"
+        ]
+        assert [event.data["identifier"] for event in canceled_events] == [
+            "alert-cancel-002"
+        ]

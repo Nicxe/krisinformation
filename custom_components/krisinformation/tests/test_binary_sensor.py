@@ -131,8 +131,7 @@ class TestBinarySensorProperties:
 
         unique_id = binary_sensor.unique_id
 
-        assert unique_id.startswith("krisinformation_active_")
-        assert mock_config_entry.entry_id in unique_id
+        assert unique_id == f"krisinformation_{mock_config_entry.entry_id}_vma_active"
 
     async def test_binary_sensor_device_class(
         self,
