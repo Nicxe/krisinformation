@@ -1,0 +1,5 @@
+# Home Assistant custom component testing
+# Requires Python 3.14 and a virtual environment
+# Install with: pip install -r requirements_test.txt
+pytest-homeassistant-custom-component==0.13.307
+aioresponses==0.7.8

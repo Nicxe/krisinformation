@@ -1,0 +1,88 @@
+{
+  "alerts": [
+    {
+      "identifier": "alert-extreme-001",
+      "sender": "MSB",
+      "status": "Actual",
+      "msgType": "Alert",
+      "scope": "Public",
+      "sent": "2024-01-15T12:00:00+01:00",
+      "info": [
+        {
+          "language": "sv-SE",
+          "category": "Met",
+          "event": "Extrem vädervarning",
+          "severity": "Extreme",
+          "urgency": "Immediate",
+          "certainty": "Observed",
+          "expires": "2099-01-16T12:00:00+01:00",
+          "headline": "Extrem storm varning",
+          "description": "Mycket kraftig storm väntas."
+        }
+      ]
+    },
+    {
+      "identifier": "alert-severe-002",
+      "sender": "MSB",
+      "status": "Actual",
+      "msgType": "Alert",
+      "scope": "Public",
+      "sent": "2024-01-15T11:00:00+01:00",
+      "info": [
+        {
+          "language": "sv-SE",
+          "category": "Safety",
+          "event": "Allvarlig varning",
+          "severity": "Severe",
+          "urgency": "Expected",
+          "certainty": "Likely",
+          "expires": "2099-01-16T11:00:00+01:00",
+          "headline": "Allvarlig händelse",
+          "description": "Allvarlig händelse pågår."
+        }
+      ]
+    },
+    {
+      "identifier": "alert-moderate-003",
+      "sender": "MSB",
+      "status": "Actual",
+      "msgType": "Alert",
+      "scope": "Public",
+      "sent": "2024-01-15T10:00:00+01:00",
+      "info": [
+        {
+          "language": "sv-SE",
+          "category": "Health",
+          "event": "Måttlig varning",
+          "severity": "Moderate",
+          "urgency": "Future",
+          "certainty": "Possible",
+          "expires": "2099-01-16T10:00:00+01:00",
+          "headline": "Måttlig hälsovarning",
+          "description": "Måttlig påverkan förväntad."
+        }
+      ]
+    },
+    {
+      "identifier": "alert-minor-004",
+      "sender": "MSB",
+      "status": "Actual",
+      "msgType": "Alert",
+      "scope": "Public",
+      "sent": "2024-01-15T09:00:00+01:00",
+      "info": [
+        {
+          "language": "sv-SE",
+          "category": "Other",
+          "event": "Mindre varning",
+          "severity": "Minor",
+          "urgency": "Unknown",
+          "certainty": "Unknown",
+          "expires": "2099-01-16T09:00:00+01:00",
+          "headline": "Mindre händelse",
+          "description": "Mindre störning rapporterad."
+        }
+      ]
+    }
+  ]
+}

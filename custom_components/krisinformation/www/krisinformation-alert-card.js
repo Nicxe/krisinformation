@@ -24,6 +24,7 @@ class KrisinformationAlertCard extends LitElement {
     hass: {},
     config: {},
     _expanded: {},
+    _activeSource: {},
   };
 
   static styles = css`
@@ -35,6 +36,8 @@ class KrisinformationAlertCard extends LitElement {
       --kris-alert-compact-title-offset: 2px;
       /* Outer horizontal padding for the list (set to 0 to align with other cards) */
       --kris-alert-outer-padding: 0px;
+      /* Consistent separation between consecutive information items */
+      --kris-alert-item-gap: 8px;
       display: block;
     }
 
@@ -51,9 +54,58 @@ class KrisinformationAlertCard extends LitElement {
     .alerts {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: var(--kris-alert-item-gap, 8px);
       /* No vertical padding: otherwise it becomes visible whitespace between stacked cards */
       padding: 0 var(--kris-alert-outer-padding, 0px);
+    }
+    /* Group wrappers otherwise bypass the flex gap between individual items. */
+    .area-group > .alert + .alert {
+      margin-top: var(--kris-alert-item-gap, 8px);
+    }
+    .source-filter {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding: 0 0 10px;
+      scrollbar-width: none;
+    }
+    .source-filter::-webkit-scrollbar { display: none; }
+    .source-chip {
+      appearance: none;
+      border: 1px solid var(--divider-color);
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--card-background-color) 92%, var(--primary-color));
+      color: var(--secondary-text-color);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 32px;
+      padding: 5px 11px;
+      font: inherit;
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.015em;
+      white-space: nowrap;
+      transition: border-color 140ms ease, background 140ms ease, color 140ms ease, transform 140ms ease;
+    }
+    .source-chip:hover { transform: translateY(-1px); }
+    .source-chip:focus-visible {
+      outline: 2px solid var(--primary-color);
+      outline-offset: 2px;
+    }
+    .source-chip.active {
+      border-color: color-mix(in srgb, var(--primary-color) 65%, var(--divider-color));
+      background: color-mix(in srgb, var(--primary-color) 14%, var(--card-background-color));
+      color: var(--primary-text-color);
+    }
+    .source-count {
+      min-width: 1.35em;
+      padding: 1px 5px;
+      border-radius: 999px;
+      background: color-mix(in srgb, currentColor 10%, transparent);
+      text-align: center;
+      font-variant-numeric: tabular-nums;
     }
     .alert {
       display: grid;
@@ -96,6 +148,8 @@ class KrisinformationAlertCard extends LitElement {
     .alert.sev-severe { --kris-accent: var(--kris-alert-red, var(--error-color, #e74c3c)); }
     .alert.sev-extreme { --kris-accent: var(--kris-alert-red, var(--error-color, #e74c3c)); }
     .alert.sev-unknown { --kris-accent: var(--primary-color); }
+    .alert.source-news { --kris-accent: var(--kris-news-accent, #168aad); }
+    .alert.source-notices { --kris-accent: var(--kris-notice-accent, #d39b00); }
 
     .icon {
       width: 32px;
@@ -137,6 +191,18 @@ class KrisinformationAlertCard extends LitElement {
       white-space: nowrap;
       flex: 1 1 auto;
       min-width: 0;
+    }
+    .source-badge {
+      flex: 0 0 auto;
+      border: 1px solid color-mix(in srgb, var(--kris-accent) 42%, var(--divider-color));
+      border-radius: 999px;
+      color: color-mix(in srgb, var(--kris-accent) 78%, var(--primary-text-color));
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      line-height: 1;
+      padding: 4px 7px 3px;
+      text-transform: uppercase;
     }
     /* In compact mode, apply a tiny optical offset so the text looks centered */
     .headline.compact {
@@ -184,13 +250,23 @@ class KrisinformationAlertCard extends LitElement {
     .order-actions { display: flex; gap: 6px; }
     .order-btn { background: var(--secondary-background-color); color: var(--primary-text-color); border: 1px solid var(--divider-color); border-radius: 4px; padding: 2px 6px; cursor: pointer; }
     .order-btn[disabled] { opacity: 0.4; cursor: default; }
+
+    @media (max-width: 480px) {
+      .alert { gap: 9px; padding: 11px 10px; }
+      .icon { width: 28px; height: 28px; }
+      .source-filter { margin-inline: -2px; padding-inline: 2px; }
+      .source-chip { min-height: 30px; padding: 4px 9px; }
+    }
   `;
 
   setConfig(config) {
-    if (!config?.entity) throw new Error('You must specify an entity.');
+    if (!config?.entity && !config?.news_entity && !config?.notices_entity) {
+      throw new Error('You must specify at least one Krisinformation entity.');
+    }
     const normalized = this._normalizeConfig(config);
     this.config = normalized;
     this._expanded = {};
+    this._activeSource = 'all';
   }
 
   disconnectedCallback() {
@@ -202,16 +278,17 @@ class KrisinformationAlertCard extends LitElement {
 
   getCardSize() {
     const header = this._showHeader() ? 1 : 0;
+    const sourceFilter = this._showSourceFilter() ? 1 : 0;
 
     // Important: HA may call getCardSize() before hass is injected.
     // If we return 0 here, Lovelace can drop the card entirely from the editor UI.
-    if (!this.hass) return header + 1;
+    if (!this.hass) return header + sourceFilter + 1;
 
     const alerts = this._visibleAlerts();
     const count = Array.isArray(alerts) ? alerts.length : 0;
 
     // When empty (including in editor), reserve at least one row for the empty state.
-    return header + (count > 0 ? count : 1);
+    return header + sourceFilter + (count > 0 ? count : 1);
   }
 
   /**
@@ -234,9 +311,81 @@ class KrisinformationAlertCard extends LitElement {
 
   _alerts() {
     if (!this.hass || !this.config) return [];
-    const stateObj = this.hass.states?.[this.config.entity];
-    const raw = stateObj ? stateObj.attributes?.alerts || [] : [];
-    return this._normalizeCapAlerts(Array.isArray(raw) ? raw : []);
+    const combined = [];
+    if (this.config.entity) {
+      const stateObj = this.hass.states?.[this.config.entity];
+      const raw = stateObj ? stateObj.attributes?.alerts || [] : [];
+      combined.push(...this._normalizeCapAlerts(Array.isArray(raw) ? raw : []).map((item) => ({
+        ...item,
+        source_type: 'vma',
+        _entity_id: this.config.entity,
+      })));
+    }
+    if (this.config.news_entity) {
+      const stateObj = this.hass.states?.[this.config.news_entity];
+      const raw = stateObj ? stateObj.attributes?.items || [] : [];
+      combined.push(...this._normalizeContentItems(raw, 'news', this.config.news_entity));
+    }
+    if (this.config.notices_entity) {
+      const stateObj = this.hass.states?.[this.config.notices_entity];
+      const raw = stateObj ? stateObj.attributes?.items || [] : [];
+      combined.push(...this._normalizeContentItems(raw, 'notices', this.config.notices_entity));
+    }
+    return combined;
+  }
+
+  _normalizeContentItems(items, sourceType, entityId) {
+    if (!Array.isArray(items)) return [];
+    return items.map((item) => {
+      const areas = Array.isArray(item?.areas) ? item.areas : [];
+      const area = this._joinUnique(areas.map((entry) => entry?.description || entry?.Description)).join(', ');
+      const links = Array.isArray(item?.links) ? item.links : [];
+      const linkText = links
+        .filter((link) => link?.url)
+        .map((link) => `[${link.text || link.url}](${link.url})`)
+        .join('\n');
+      const body = item?.body_text || item?.mobile_body || '';
+      const details = [body, linkText].filter(Boolean).join('\n\n');
+      const isNews = sourceType === 'news';
+      const noticeType = item?.notice_type != null ? ` ${item.notice_type}` : '';
+      return {
+        identifier: item?.identifier || String(item?.content_id || ''),
+        severity: 'Unknown',
+        event: isNews ? this._t('news') : `${this._t('notice')}${noticeType}`,
+        area,
+        areas: area,
+        sent: item?.updated || item?.changed || item?.published || null,
+        published: item?.published || item?.changed || null,
+        headline: item?.headline || '',
+        description: item?.preamble || item?.push_message || '',
+        details,
+        url: item?.web_url || links.find((link) => link?.url)?.url || null,
+        source: item?.sender_name || 'Krisinformation.se',
+        source_type: sourceType,
+        _entity_id: entityId,
+        _source_icon: this._contentIcon(sourceType, item),
+      };
+    }).filter((item) => item.identifier || item.headline || item.details);
+  }
+
+  _contentIcon(sourceType, item) {
+    if (sourceType === 'news') return 'mdi:newspaper-variant-outline';
+    const layoutIcon = String(item?.layout?.icon || '').toLowerCase();
+    if (layoutIcon.includes('announcement')) return 'mdi:bullhorn-outline';
+    if (layoutIcon.includes('warning')) return 'mdi:alert-outline';
+    return 'mdi:message-alert-outline';
+  }
+
+  _configuredSources() {
+    const sources = [];
+    if (this.config?.entity) sources.push('vma');
+    if (this.config?.news_entity) sources.push('news');
+    if (this.config?.notices_entity) sources.push('notices');
+    return sources;
+  }
+
+  _showSourceFilter() {
+    return this.config?.show_source_filter !== false && this._configuredSources().length > 1;
   }
 
   _visibleAlerts() {
@@ -245,13 +394,17 @@ class KrisinformationAlertCard extends LitElement {
     const cfg = this.config || {};
     const filterSev = (cfg.filter_severities || []).map((s) => String(s).toLowerCase());
     const filterAreas = (cfg.filter_areas || []).map((s) => String(s).toLowerCase());
+    const filterSources = (cfg.filter_sources || []).map((s) => String(s).toLowerCase());
 
     const filtered = alerts.filter((a) => {
       const sev = String(a.severity || '').toLowerCase();
       const area = String(a.area || a.areas || '').toLowerCase();
+      const source = String(a.source_type || 'vma').toLowerCase();
       const sevOk = filterSev.length === 0 || filterSev.includes(sev);
       const areaOk = filterAreas.length === 0 || filterAreas.some((x) => area.includes(x));
-      return sevOk && areaOk;
+      const sourceOk = filterSources.length === 0 || filterSources.includes(source);
+      const activeOk = !this._activeSource || this._activeSource === 'all' || this._activeSource === source;
+      return sevOk && areaOk && sourceOk && activeOk;
     });
 
     const sorted = [...filtered].sort((a, b) => {
@@ -265,8 +418,8 @@ class KrisinformationAlertCard extends LitElement {
         const be = String(b.event || '').toLowerCase();
         if (ae !== be) return ae.localeCompare(be);
       }
-      const at = new Date(a.sent || a.published || 0).getTime();
-      const bt = new Date(b.sent || b.published || 0).getTime();
+      const at = new Date(a.sent || a.updated || a.changed || a.published || 0).getTime();
+      const bt = new Date(b.sent || b.updated || b.changed || b.published || 0).getTime();
       return bt - at;
     });
 
@@ -301,7 +454,9 @@ class KrisinformationAlertCard extends LitElement {
 
   _iconTemplate(item) {
     if (this.config.show_icon === false) return html``;
-    const icon = this.config.icon || 'mdi:alert-circle-outline';
+    const icon = this.config.icon || item?._source_icon || (item?.source_type === 'vma'
+      ? 'mdi:alert-circle-outline'
+      : 'mdi:information-outline');
     const color = this.config.icon_color || '';
     const style = color ? `color:${color}` : '';
     return html`<ha-icon class="icon" style="${style}" icon="${icon}" aria-hidden="true"></ha-icon>`;
@@ -309,7 +464,8 @@ class KrisinformationAlertCard extends LitElement {
 
   render() {
     if (!this.hass || !this.config) return html``;
-    const stateObj = this.hass.states?.[this.config.entity];
+    const primaryEntity = this.config.entity || this.config.news_entity || this.config.notices_entity;
+    const stateObj = this.hass.states?.[primaryEntity];
     const t = this._t.bind(this);
     const alerts = this._visibleAlerts();
 
@@ -319,10 +475,43 @@ class KrisinformationAlertCard extends LitElement {
 
     return html`
       <ha-card header=${header}>
+        ${this._sourceFilterTemplate()}
         ${alerts.length === 0
-          ? html`<div class="empty">${t('no_alerts')}</div>`
+          ? html`<div class="empty">${t('no_items')}</div>`
           : html`<div class="alerts">${this._renderGrouped(alerts)}</div>`}
       </ha-card>
+    `;
+  }
+
+  _sourceFilterTemplate() {
+    if (!this._showSourceFilter()) return html``;
+    const configuredFilter = (this.config.filter_sources || []).map((source) => String(source).toLowerCase());
+    const sources = this._configuredSources().filter(
+      (source) => configuredFilter.length === 0 || configuredFilter.includes(source),
+    );
+    if (sources.length <= 1) return html``;
+    const items = this._alerts();
+    const buttons = ['all', ...sources];
+    return html`
+      <nav class="source-filter" aria-label="${this._t('filter_by_source')}">
+        ${buttons.map((source) => {
+          const count = source === 'all'
+            ? items.filter((item) => sources.includes(item.source_type || 'vma')).length
+            : items.filter((item) => (item.source_type || 'vma') === source).length;
+          const active = (this._activeSource || 'all') === source;
+          return html`
+            <button
+              type="button"
+              class="source-chip ${active ? 'active' : ''}"
+              aria-pressed=${active}
+              @click=${() => { this._activeSource = source; }}
+            >
+              <span>${this._t(source)}</span>
+              <span class="source-count">${count}</span>
+            </button>
+          `;
+        })}
+      </nav>
     `;
   }
 
@@ -338,6 +527,7 @@ class KrisinformationAlertCard extends LitElement {
       if (groupBy === 'area') return a.area || a.areas || '—';
       if (groupBy === 'severity') return (a.severity || 'Unknown');
       if (groupBy === 'type') return (a.event || '—');
+      if (groupBy === 'source') return this._t(a.source_type || 'vma');
       return '—';
     };
     for (const a of alerts) {
@@ -348,7 +538,10 @@ class KrisinformationAlertCard extends LitElement {
 
     // Sort group keys
     let keys = Object.keys(groups);
-    if (groupBy === 'severity') {
+    if (groupBy === 'source') {
+      const sourceOrder = ['vma', 'news', 'notices'].map((source) => this._t(source));
+      keys.sort((a, b) => sourceOrder.indexOf(a) - sourceOrder.indexOf(b));
+    } else if (groupBy === 'severity') {
       keys.sort((ka, kb) => {
         const ra = this._severityRank({ severity: ka });
         const rb = this._severityRank({ severity: kb });
@@ -372,6 +565,7 @@ class KrisinformationAlertCard extends LitElement {
     const expanded = !!this._expanded[this._alertKey(item, idx)];
     const showIcon = this.config.show_icon !== false;
     const sevBgClass = this.config?.severity_background ? 'bg-severity' : '';
+    const sourceType = item.source_type || 'vma';
 
     const metaFields = {
       area: (this.config.show_area !== false && (item.area || item.areas))
@@ -384,7 +578,7 @@ class KrisinformationAlertCard extends LitElement {
         ? html`<span><b>${t('severity')}:</b> ${item.severity}</span>`
         : null,
       sent: (this.config.show_sent !== false && item.sent)
-        ? html`<span><b>${t('sent')}:</b> ${this._fmtTs(item.sent)}</span>`
+        ? html`<span><b>${sourceType === 'vma' ? t('sent') : t('updated')}:</b> ${this._fmtTs(item.sent)}</span>`
         : null,
     };
 
@@ -429,7 +623,7 @@ class KrisinformationAlertCard extends LitElement {
 
     return html`
       <div
-        class="alert ${sevClass} ${sevBgClass} ${isCompact ? 'compact' : ''}"
+        class="alert ${sevClass} source-${sourceType} ${sevBgClass} ${isCompact ? 'compact' : ''}"
         role="button"
         tabindex="0"
         aria-label="${item.headline || item.event || ''}"
@@ -440,6 +634,9 @@ class KrisinformationAlertCard extends LitElement {
         ${showIcon ? html`<div class="icon-col ${isCompact ? 'compact' : ''}">${this._iconTemplate(item)}</div>` : html``}
         <div class="content ${isCompact ? 'compact' : ''}">
           <div class="title">
+            ${this._configuredSources().length > 1
+              ? html`<span class="source-badge">${t(sourceType)}</span>`
+              : html``}
             <div class="headline ${isCompact ? 'compact' : ''}">${headline || description || (item.area || item.areas) || ''}</div>
             ${showToggle ? html`
               <div class="toggle-col ${isCompact ? 'compact' : ''}">
@@ -527,7 +724,9 @@ class KrisinformationAlertCard extends LitElement {
   }
 
   _alertKey(item, idx) {
-    return `${String(item.severity || '')}-${String(item.area || item.areas || '')}-${String(item.sent || item.published || idx)}`;
+    return item.identifier
+      ? `${String(item.source_type || 'vma')}-${String(item.identifier)}`
+      : `${String(item.severity || '')}-${String(item.area || item.areas || '')}-${String(item.sent || item.published || idx)}`;
   }
 
   _fmtTs(value) {
@@ -619,6 +818,8 @@ class KrisinformationAlertCard extends LitElement {
           m.headline,
           m.description,
           m.details,
+          m.identifier,
+          m.source_type,
         ])
       );
       if (this._lastKey !== key) {
@@ -635,20 +836,36 @@ class KrisinformationAlertCard extends LitElement {
     const dict = {
       en: {
         no_alerts: 'No alerts',
+        no_items: 'No current information',
+        all: 'All',
+        vma: 'VMA',
+        news: 'News',
+        notices: 'Notices',
+        notice: 'Notice',
         area: 'Area',
         type: 'Type',
         severity: 'Severity',
         sent: 'Sent',
+        updated: 'Updated',
+        filter_by_source: 'Filter by source',
         show_details: 'Show details',
         hide_details: 'Hide details',
         unknown: 'Unknown',
       },
       sv: {
         no_alerts: 'Inga varningar',
+        no_items: 'Ingen aktuell information',
+        all: 'Alla',
+        vma: 'VMA',
+        news: 'Nyheter',
+        notices: 'Notiser',
+        notice: 'Notis',
         area: 'Område',
         type: 'Typ',
         severity: 'Allvarlighetsgrad',
         sent: 'Skickat',
+        updated: 'Uppdaterat',
+        filter_by_source: 'Filtrera efter källa',
         show_details: 'Visa detaljer',
         hide_details: 'Dölj detaljer',
         unknown: 'Okänt',
@@ -759,6 +976,7 @@ class KrisinformationAlertCard extends LitElement {
     }
     // Defaults
     if (normalized.show_header === undefined) normalized.show_header = true;
+    if (normalized.show_source_filter === undefined) normalized.show_source_filter = true;
     if (normalized.show_icon === undefined) normalized.show_icon = true;
     if (normalized.severity_background === undefined) normalized.severity_background = false;
     if (normalized.max_items === undefined) normalized.max_items = 0;
@@ -771,6 +989,7 @@ class KrisinformationAlertCard extends LitElement {
     }
     if (!Array.isArray(normalized.filter_severities)) normalized.filter_severities = [];
     if (!Array.isArray(normalized.filter_areas)) normalized.filter_areas = [];
+    if (!Array.isArray(normalized.filter_sources)) normalized.filter_sources = [];
     if (normalized.collapse_details === undefined) normalized.collapse_details = true;
     if (normalized.show_area === undefined) normalized.show_area = true;
     if (normalized.show_type === undefined) normalized.show_type = true;
@@ -803,19 +1022,31 @@ class KrisinformationAlertCard extends LitElement {
   }
 
   static getStubConfig(hass, entities) {
+    const candidates = entities || Object.keys(hass?.states || {});
+    const hasAttribute = (entityId, attribute) => Array.isArray(hass?.states?.[entityId]?.attributes?.[attribute]);
+    const vmaEntity = candidates.find((entityId) => hasAttribute(entityId, 'alerts')) || '';
+    const contentEntities = candidates.filter((entityId) => hasAttribute(entityId, 'items'));
+    const newsEntity = contentEntities.find((entityId) => entityId.endsWith('_news')) || '';
+    const noticesEntity = contentEntities.find((entityId) => entityId.endsWith('_notices')) || '';
     return {
-      entity: (entities || []).find((e) => e && e.startsWith('sensor.')) || '',
+      entity: vmaEntity || (!newsEntity && !noticesEntity
+        ? candidates.find((entityId) => entityId?.startsWith('sensor.')) || ''
+        : ''),
+      news_entity: newsEntity,
+      notices_entity: noticesEntity,
       title: '',
       show_header: true,
+      show_source_filter: true,
       show_icon: true,
       severity_background: false,
-      icon: 'mdi:alert-circle-outline',
+      icon: '',
       max_items: 0,
       sort_order: 'time_desc',
       date_format: 'locale',
       group_by: 'none',
       filter_severities: [],
       filter_areas: [],
+      filter_sources: [],
       collapse_details: true,
       show_area: true,
       show_type: true,
@@ -877,12 +1108,15 @@ class KrisinformationAlertCardEditor extends LitElement {
         ];
     const dateFormatLabel = lang.startsWith('sv') ? 'Datumformat' : 'Date format';
     const schema = [
-      { name: 'entity', label: 'Entity', required: true, selector: { entity: { domain: 'sensor' } } },
+      { name: 'entity', label: 'VMA entity', selector: { entity: { domain: 'sensor' } } },
+      { name: 'news_entity', label: 'News entity', selector: { entity: { domain: 'sensor' } } },
+      { name: 'notices_entity', label: 'Notices entity', selector: { entity: { domain: 'sensor' } } },
       { name: 'title', label: 'Title', selector: { text: {} } },
       { name: 'show_header', label: 'Show header', selector: { boolean: {} } },
+      { name: 'show_source_filter', label: 'Show source filter', selector: { boolean: {} } },
       { name: 'show_icon', label: 'Show icon', selector: { boolean: {} } },
       { name: 'severity_background', label: 'Severity background', selector: { boolean: {} } },
-      { name: 'icon', label: 'Icon (mdi:...)', selector: { text: {} } },
+      { name: 'icon', label: 'Icon override (blank uses source icon)', selector: { text: {} } },
       { name: 'icon_color', label: 'Icon color (CSS)', selector: { text: {} } },
       { name: 'max_items', label: 'Max items', selector: { number: { min: 0, mode: 'box' } } },
       { name: 'sort_order', label: 'Sort order', selector: { select: { mode: 'dropdown', options: [
@@ -896,6 +1130,7 @@ class KrisinformationAlertCardEditor extends LitElement {
         { value: 'area', label: 'By area' },
         { value: 'severity', label: 'By severity' },
         { value: 'type', label: 'By type' },
+        { value: 'source', label: 'By source' },
       ] } } },
       { name: 'filter_severities', label: 'Filter severities', selector: { select: { multiple: true, options: [
         { value: 'Minor', label: 'Minor' },
@@ -905,6 +1140,11 @@ class KrisinformationAlertCardEditor extends LitElement {
         { value: 'Unknown', label: 'Unknown' },
       ] } } },
       { name: 'filter_areas', label: 'Filter areas (comma-separated)', selector: { text: {} } },
+      { name: 'filter_sources', label: 'Sources to include', selector: { select: { multiple: true, options: [
+        { value: 'vma', label: 'VMA' },
+        { value: 'news', label: 'News' },
+        { value: 'notices', label: 'Notices' },
+      ] } } },
       { name: 'collapse_details', label: 'Collapse details', selector: { boolean: {} } },
       // show_details is controlled as a meta toggle (text)
       // actions (use ui_action selector like in smhi-alert-card)
@@ -915,11 +1155,14 @@ class KrisinformationAlertCardEditor extends LitElement {
 
     const data = {
       entity: this._config.entity || '',
+      news_entity: this._config.news_entity || '',
+      notices_entity: this._config.notices_entity || '',
       title: this._config.title || '',
       show_header: this._config.show_header !== undefined ? this._config.show_header : true,
+      show_source_filter: this._config.show_source_filter !== undefined ? this._config.show_source_filter : true,
       show_icon: this._config.show_icon !== undefined ? this._config.show_icon : true,
       severity_background: this._config.severity_background !== undefined ? this._config.severity_background : false,
-      icon: this._config.icon || 'mdi:alert-circle-outline',
+      icon: this._config.icon || '',
       icon_color: this._config.icon_color || '',
       max_items: this._config.max_items ?? 0,
       sort_order: this._config.sort_order || 'time_desc',
@@ -927,6 +1170,7 @@ class KrisinformationAlertCardEditor extends LitElement {
       group_by: this._config.group_by || 'none',
       filter_severities: this._config.filter_severities || [],
       filter_areas: (this._config.filter_areas || []).join(', '),
+      filter_sources: this._config.filter_sources || [],
       collapse_details: this._config.collapse_details !== undefined ? this._config.collapse_details : true,
       show_area: this._config.show_area !== undefined ? this._config.show_area : true,
       show_type: this._config.show_type !== undefined ? this._config.show_type : true,
@@ -1082,8 +1326,11 @@ class KrisinformationAlertCardEditor extends LitElement {
     if (schema.label) return schema.label;
     const labels = {
       entity: 'Entity',
+      news_entity: 'News entity',
+      notices_entity: 'Notices entity',
       title: 'Title',
       show_header: 'Show header',
+      show_source_filter: 'Show source filter',
       show_icon: 'Show icon',
       severity_background: 'Severity background',
       icon: 'Icon',
@@ -1094,6 +1341,7 @@ class KrisinformationAlertCardEditor extends LitElement {
       group_by: 'Group by',
       filter_severities: 'Filter severities',
       filter_areas: 'Filter areas (comma-separated)',
+      filter_sources: 'Sources to include',
       collapse_details: 'Collapse details',
       show_area: 'Show area',
       show_type: 'Show type',
@@ -1116,7 +1364,7 @@ window.customCards = window.customCards || [];
 window.customCards.push({
   type: 'krisinformation-alert-card',
   name: 'Krisinformation Alert Card',
-  description: 'Displays Krisinformation alerts using the Krisinformation integration with configurable attributes',
+  description: 'Displays VMA, Krisinformation news, and notices in one source-aware feed',
   preview: true,
 });
 
@@ -1135,7 +1383,8 @@ KrisinformationAlertCard.prototype._runAction = function (action, item) {
   const a = action?.action || 'more-info';
   if (a === 'none') return;
   if (a === 'more-info') {
-    const ev = new CustomEvent('hass-more-info', { bubbles: true, composed: true, detail: { entityId: this.config.entity } });
+    const entityId = item?._entity_id || this.config.entity || this.config.news_entity || this.config.notices_entity;
+    const ev = new CustomEvent('hass-more-info', { bubbles: true, composed: true, detail: { entityId } });
     this.dispatchEvent(ev);
     return;
   }

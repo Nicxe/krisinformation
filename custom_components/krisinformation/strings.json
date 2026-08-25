@@ -14,7 +14,17 @@
           "language": "Language",
           "include_update_cancel": "Include Update/Cancel in sensors",
           "severity_min": "Minimum severity",
-          "api_environment": "API environment"
+          "api_environment": "VMA API environment",
+          "include_news": "Include news",
+          "include_notices": "Include notices",
+          "include_smhi_weather_warnings": "Include SMHI weather warnings in notices",
+          "news_days": "Days of news history",
+          "max_items": "Maximum items per content source",
+          "include_national": "Include national content",
+          "include_unlocated": "Include content without a geographic tag"
+        },
+        "data_description": {
+          "include_smhi_weather_warnings": "Turn this off if you use SMHI Alerts and want to avoid duplicate weather warnings."
         }
       }
       ,
@@ -27,7 +37,17 @@
           "language": "Language",
           "include_update_cancel": "Include Update/Cancel in sensors",
           "severity_min": "Minimum severity",
-          "api_environment": "API environment"
+          "api_environment": "VMA API environment",
+          "include_news": "Include news",
+          "include_notices": "Include notices",
+          "include_smhi_weather_warnings": "Include SMHI weather warnings in notices",
+          "news_days": "Days of news history",
+          "max_items": "Maximum items per content source",
+          "include_national": "Include national content",
+          "include_unlocated": "Include content without a geographic tag"
+        },
+        "data_description": {
+          "include_smhi_weather_warnings": "Turn this off if you use SMHI Alerts and want to avoid duplicate weather warnings."
         }
       },
       "reload_notice": {
@@ -40,13 +60,33 @@
     "step": {
       "init": {
         "title": "Krisinformation options",
-        "description": "Configure how alerts are shown. Events for New/Update/Cancel are always fired.",
+        "description": "Configure VMA, news, notices, and geographic content filtering.",
         "data": {
           "language": "Language",
           "include_update_cancel": "Include Update/Cancel in sensors",
           "severity_min": "Minimum severity",
-          "api_environment": "API environment"
+          "api_environment": "VMA API environment",
+          "include_news": "Include news",
+          "include_notices": "Include notices",
+          "include_smhi_weather_warnings": "Include SMHI weather warnings in notices",
+          "news_days": "Days of news history",
+          "max_items": "Maximum items per content source",
+          "include_national": "Include national content",
+          "include_unlocated": "Include content without a geographic tag"
+        },
+        "data_description": {
+          "include_smhi_weather_warnings": "Turn this off if you use SMHI Alerts and want to avoid duplicate weather warnings."
         }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "news": {
+        "name": "News"
+      },
+      "notices": {
+        "name": "Notices"
       }
     }
   }

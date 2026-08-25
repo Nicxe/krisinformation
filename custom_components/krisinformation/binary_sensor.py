@@ -11,12 +11,12 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
-    DOMAIN,
     CONF_NAME,
     CONF_MUNICIPALITY,
     DEVICE_MANUFACTURER,
     DEVICE_MODEL,
 )
+from .helpers import legacy_location_slug, vma_active_unique_id, vma_device_identifier
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -26,27 +26,22 @@ async def async_setup_entry(
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ):
-    coordinator = hass.data[DOMAIN][config_entry.entry_id]
+    coordinator = config_entry.runtime_data.vma_coordinator
     async_add_entities(
         [KrisinformationActiveBinary(config_entry.entry_id, coordinator)]
     )
 
 
 class KrisinformationActiveBinary(CoordinatorEntity, BinarySensorEntity):
+    _unrecorded_attributes = frozenset({"alerts"})
+
     def __init__(self, entry_id: str, coordinator) -> None:
         super().__init__(coordinator)
         config = coordinator.config
         municipality = config.get(CONF_MUNICIPALITY, "Hela Sverige")
         base_name = config.get(CONF_NAME, "Krisinformation")
 
-        sanitized = (
-            municipality.lower()
-            .replace(" ", "_")
-            .replace("å", "a")
-            .replace("ä", "a")
-            .replace("ö", "o")
-            .replace("é", "e")
-        )
+        sanitized = legacy_location_slug(municipality)
         self._entry_id = entry_id
         self._municipality = municipality
         self._base_name = base_name
@@ -60,7 +55,7 @@ class KrisinformationActiveBinary(CoordinatorEntity, BinarySensorEntity):
 
     @property
     def unique_id(self) -> str:
-        return f"krisinformation_active_{self._sanitized}_{self._entry_id}"
+        return vma_active_unique_id(self._entry_id)
 
     @property
     def is_on(self) -> bool:
@@ -77,7 +72,7 @@ class KrisinformationActiveBinary(CoordinatorEntity, BinarySensorEntity):
     @property
     def device_info(self):
         return {
-            "identifiers": {(DOMAIN, f"{self._sanitized}_{self._entry_id}")},
+            "identifiers": {vma_device_identifier(self._entry_id)},
             "manufacturer": DEVICE_MANUFACTURER,
             "model": DEVICE_MODEL,
             "name": f"Krisinformation ({self._municipality})",

@@ -21,6 +21,29 @@ jobs:
       run_hassfest: true
     secrets: inherit
 
+  python_quality:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+
+      - name: Install test dependencies
+        run: python -m pip install -r custom_components/krisinformation/requirements_test.txt
+
+      - name: Ruff
+        run: |
+          python -m pip install ruff==0.15.12
+          ./scripts/run_ruff_ci.sh
+
+      - name: Tests
+        run: ./scripts/run_tests.sh
+
   check_card_syntax:
     runs-on: ubuntu-latest
 
@@ -33,5 +56,5 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Check card syntax
-        run: node --experimental-default-type=module --check custom_components/krisinformation/www/krisinformation-alert-card.js
+      - name: Test card
+        run: ./scripts/run_card_tests.sh
