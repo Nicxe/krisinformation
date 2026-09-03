@@ -127,10 +127,12 @@ async def test_content_sensors_expose_bounded_normalized_items(
     assert "<" not in news_state.attributes["latest"]["body_text"]
 
     device_registry = dr.async_get(hass)
-    content_device = device_registry.async_get_device(
-        identifiers={content_device_identifier(entry.entry_id)}
-    )
+    news_entity = entity_registry.async_get(news_entity_id)
+    assert news_entity is not None
+    assert news_entity.device_id is not None
+    content_device = device_registry.async_get(news_entity.device_id)
     assert content_device is not None
+    assert content_device.identifiers == {content_device_identifier(entry.entry_id)}
     assert content_device.manufacturer == "Myndigheten för civilt försvar"
     assert KrisinformationNewsSensor._unrecorded_attributes == frozenset(
         {"items", "latest"}

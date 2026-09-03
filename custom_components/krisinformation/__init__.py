@@ -182,7 +182,21 @@ async def _async_migrate_registry_identifiers(
 
     device_registry = dr.async_get(hass)
     legacy_identifier = (DOMAIN, f"{legacy_slug}_{entry.entry_id}")
-    if device := device_registry.async_get_device(identifiers={legacy_identifier}):
+    if get_device := getattr(device_registry, "async_get_device_by_identifier", None):
+        device = get_device(legacy_identifier, entry.entry_id)
+    else:
+        # Home Assistant versions before 2026.8 lack the scoped lookup API.
+        device = next(
+            (
+                candidate
+                for candidate in dr.async_entries_for_config_entry(
+                    device_registry, entry.entry_id
+                )
+                if legacy_identifier in candidate.identifiers
+            ),
+            None,
+        )
+    if device is not None:
         device_registry.async_update_device(
             device.id,
             new_identifiers=(device.identifiers - {legacy_identifier})

@@ -4,13 +4,14 @@ from __future__ import annotations
 
 from datetime import timedelta
 from typing import Any
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 import re
 
 import pytest
 from aiohttp import ClientError
 from aioresponses import aioresponses
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.update_coordinator import UpdateFailed
 
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -21,6 +22,84 @@ from custom_components.krisinformation.const import (
     INTEGRATION_VERSION,
     USER_AGENT_PRODUCT,
 )
+
+
+@pytest.mark.parametrize("device_exists", [True, False])
+async def test_device_migration_uses_config_entry_scoped_lookup(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    device_exists: bool,
+) -> None:
+    """Use the scoped API without calling the deprecated global lookup."""
+    from custom_components.krisinformation import _async_migrate_registry_identifiers
+
+    mock_config_entry.add_to_hass(hass)
+    registry = dr.async_get(hass)
+    identifier = (DOMAIN, f"stockholm_{mock_config_entry.entry_id}")
+    extra_identifier = (DOMAIN, "additional_identifier")
+    device = registry.async_get_or_create(
+        config_entry_id=mock_config_entry.entry_id,
+        identifiers={identifier, extra_identifier},
+    )
+
+    with (
+        patch.object(
+            registry,
+            "async_get_device_by_identifier",
+            return_value=device if device_exists else None,
+            create=True,
+        ) as scoped_lookup,
+        patch.object(
+            registry,
+            "async_get_device",
+            side_effect=AssertionError("Deprecated device lookup must not be used"),
+            create=True,
+        ),
+    ):
+        await _async_migrate_registry_identifiers(hass, mock_config_entry)
+
+    scoped_lookup.assert_called_once_with(identifier, mock_config_entry.entry_id)
+    updated = registry.async_get(device.id)
+    assert updated is not None
+    assert updated.identifiers == {
+        (DOMAIN, f"{mock_config_entry.entry_id}_vma") if device_exists else identifier,
+        extra_identifier,
+    }
+
+
+@pytest.mark.parametrize("device_owned_by_entry", [True, False])
+async def test_device_migration_compatibility_is_scoped_to_config_entry(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    device_owned_by_entry: bool,
+) -> None:
+    """The compatibility lookup must only migrate devices owned by this entry."""
+    from custom_components.krisinformation import _async_migrate_registry_identifiers
+
+    mock_config_entry.add_to_hass(hass)
+    other_entry = MockConfigEntry(domain=DOMAIN, entry_id="other_entry")
+    other_entry.add_to_hass(hass)
+    registry = dr.async_get(hass)
+    identifier = (DOMAIN, f"stockholm_{mock_config_entry.entry_id}")
+    other_device = registry.async_get_or_create(
+        config_entry_id=(
+            mock_config_entry.entry_id
+            if device_owned_by_entry
+            else other_entry.entry_id
+        ),
+        identifiers={identifier},
+    )
+
+    with patch.object(registry, "async_get_device_by_identifier", None, create=True):
+        await _async_migrate_registry_identifiers(hass, mock_config_entry)
+
+    updated = registry.async_get(other_device.id)
+    assert updated is not None
+    assert updated.identifiers == {
+        (DOMAIN, f"{mock_config_entry.entry_id}_vma")
+        if device_owned_by_entry
+        else identifier
+    }
 
 
 class TestCoordinatorSetup:
