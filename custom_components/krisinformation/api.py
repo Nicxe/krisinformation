@@ -116,10 +116,14 @@ class KrisinformationApiClient:
             params["numberOfNewsArticles"] = str(number_of_articles)
 
         payload = await self._async_get(KRISINFORMATION_NEWS_URL, params)
-        items = (NewsItem.from_api(item) for item in payload)
+        items = tuple(NewsItem.from_api(item) for item in payload)
+        if any(not item.identifier for item in items):
+            raise KrisinformationApiResponseError(
+                "API news item has no identifier or content ID"
+            )
         return tuple(
             sorted(
-                (item for item in items if item.identifier),
+                items,
                 key=lambda item: item.sort_datetime,
                 reverse=True,
             )
@@ -139,10 +143,14 @@ class KrisinformationApiClient:
             **self._geography_params(county_codes, all_counties),
         }
         payload = await self._async_get(KRISINFORMATION_NOTICES_URL, params)
-        items = (NoticeItem.from_api(item) for item in payload)
+        items = tuple(NoticeItem.from_api(item) for item in payload)
+        if any(not item.identifier for item in items):
+            raise KrisinformationApiResponseError(
+                "API notice item has no identifier or content ID"
+            )
         return tuple(
             sorted(
-                (item for item in items if item.identifier),
+                items,
                 key=lambda item: item.sort_datetime,
                 reverse=True,
             )

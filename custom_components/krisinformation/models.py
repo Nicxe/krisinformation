@@ -11,6 +11,12 @@ from typing import Any
 _WHITESPACE = re.compile(r"\s+")
 
 
+def _api_value(value: dict[str, Any], key: str, default: Any = None) -> Any:
+    """Read current camelCase fields, falling back to legacy PascalCase fields."""
+    camel_key = key[0].lower() + key[1:]
+    return value.get(camel_key, value.get(key, default))
+
+
 class _TextExtractor(HTMLParser):
     """Extract safe, readable text from API-provided HTML."""
 
@@ -80,8 +86,8 @@ class ContentLink:
     @classmethod
     def from_api(cls, value: dict[str, Any]) -> ContentLink:
         return cls(
-            text=_optional_text(value.get("Text")) or "",
-            url=_optional_text(value.get("Url")) or "",
+            text=_optional_text(_api_value(value, "Text")) or "",
+            url=_optional_text(_api_value(value, "Url")) or "",
         )
 
     def as_dict(self) -> dict[str, str]:
@@ -98,8 +104,8 @@ class ContentArea:
     @classmethod
     def from_api(cls, value: dict[str, Any]) -> ContentArea:
         return cls(
-            type=_optional_text(value.get("Type")) or "",
-            description=_optional_text(value.get("Description")) or "",
+            type=_optional_text(_api_value(value, "Type")) or "",
+            description=_optional_text(_api_value(value, "Description")) or "",
         )
 
     def as_dict(self) -> dict[str, str]:
@@ -118,9 +124,9 @@ class NoticeLayout:
     def from_api(cls, value: dict[str, Any] | None) -> NoticeLayout:
         value = value or {}
         return cls(
-            background_color=_optional_text(value.get("BackgroundColor")),
-            icon=_optional_text(value.get("Icon")),
-            right_aligned_icon=bool(value.get("RightAlignedIcon", False)),
+            background_color=_optional_text(_api_value(value, "BackgroundColor")),
+            icon=_optional_text(_api_value(value, "Icon")),
+            right_aligned_icon=bool(_api_value(value, "RightAlignedIcon", False)),
         )
 
     def as_dict(self) -> dict[str, str | bool | None]:
@@ -168,28 +174,28 @@ class NewsItem:
 
     @classmethod
     def from_api(cls, value: dict[str, Any]) -> NewsItem:
-        content_id = _optional_int(value.get("ContentId"))
-        identifier = _optional_text(value.get("Identifier"))
+        content_id = _optional_int(_api_value(value, "ContentId"))
+        identifier = _optional_text(_api_value(value, "Identifier"))
         return cls(
             identifier=identifier
             or (str(content_id) if content_id is not None else ""),
             content_id=content_id,
-            content_type=_optional_text(value.get("ContentTypeName")),
-            headline=html_to_text(value.get("Headline")),
-            preamble=html_to_text(value.get("Preamble")),
-            body_text=html_to_text(value.get("BodyText")),
-            push_message=_optional_text(value.get("PushMessage")),
-            published=_parse_datetime(value.get("Published")),
-            updated=_parse_datetime(value.get("Updated")),
-            image_url=_optional_text(value.get("ImageLink")),
-            web_url=_optional_text(value.get("Web")),
-            language=_optional_text(value.get("Language")),
-            event=_optional_text(value.get("Event")),
-            sender_name=_optional_text(value.get("SenderName")),
-            is_test=bool(value.get("IsTest", False)),
-            push=bool(value.get("Push", False)),
-            areas=_areas_from_api(value.get("Area")),
-            links=_links_from_api(value.get("Links")),
+            content_type=_optional_text(_api_value(value, "ContentTypeName")),
+            headline=html_to_text(_api_value(value, "Headline")),
+            preamble=html_to_text(_api_value(value, "Preamble")),
+            body_text=html_to_text(_api_value(value, "BodyText")),
+            push_message=_optional_text(_api_value(value, "PushMessage")),
+            published=_parse_datetime(_api_value(value, "Published")),
+            updated=_parse_datetime(_api_value(value, "Updated")),
+            image_url=_optional_text(_api_value(value, "ImageLink")),
+            web_url=_optional_text(_api_value(value, "Web")),
+            language=_optional_text(_api_value(value, "Language")),
+            event=_optional_text(_api_value(value, "Event")),
+            sender_name=_optional_text(_api_value(value, "SenderName")),
+            is_test=bool(_api_value(value, "IsTest", False)),
+            push=bool(_api_value(value, "Push", False)),
+            areas=_areas_from_api(_api_value(value, "Area")),
+            links=_links_from_api(_api_value(value, "Links")),
         )
 
     @property
@@ -246,30 +252,32 @@ class NoticeItem:
 
     @classmethod
     def from_api(cls, value: dict[str, Any]) -> NoticeItem:
-        content_id = _optional_int(value.get("ContentId"))
-        identifier = _optional_text(value.get("Id"))
+        content_id = _optional_int(_api_value(value, "ContentId"))
+        identifier = _optional_text(_api_value(value, "Id"))
         return cls(
             identifier=identifier
             or (str(content_id) if content_id is not None else ""),
             content_id=content_id,
-            content_type=_optional_text(value.get("ContentTypeName")),
-            notice_type=_optional_int(value.get("NoticeType")),
-            headline=html_to_text(value.get("Headline")),
-            preamble=html_to_text(value.get("Preamble")),
-            body_text=html_to_text(value.get("BodyText")),
-            mobile_body=html_to_text(value.get("MobileBody")),
-            changed=_parse_datetime(value.get("ChangedDate")),
-            image_url=_optional_text(value.get("ImageLink")),
-            image_caption=_optional_text(value.get("ImageCaption")),
-            video_url=_optional_text(value.get("VideoUrl")),
-            video_caption=_optional_text(value.get("VideoCaption")),
-            youtube_id=_optional_text(value.get("YoutubeId")),
-            sort_order=_optional_int(value.get("SortOrder")),
+            content_type=_optional_text(_api_value(value, "ContentTypeName")),
+            notice_type=_optional_int(_api_value(value, "NoticeType")),
+            headline=html_to_text(_api_value(value, "Headline")),
+            preamble=html_to_text(_api_value(value, "Preamble")),
+            body_text=html_to_text(_api_value(value, "BodyText")),
+            mobile_body=html_to_text(_api_value(value, "MobileBody")),
+            changed=_parse_datetime(_api_value(value, "ChangedDate")),
+            image_url=_optional_text(_api_value(value, "ImageLink")),
+            image_caption=_optional_text(_api_value(value, "ImageCaption")),
+            video_url=_optional_text(_api_value(value, "VideoUrl")),
+            video_caption=_optional_text(_api_value(value, "VideoCaption")),
+            youtube_id=_optional_text(_api_value(value, "YoutubeId")),
+            sort_order=_optional_int(_api_value(value, "SortOrder")),
             layout=NoticeLayout.from_api(
-                value.get("Layout") if isinstance(value.get("Layout"), dict) else None
+                _api_value(value, "Layout")
+                if isinstance(_api_value(value, "Layout"), dict)
+                else None
             ),
-            areas=_areas_from_api(value.get("Area")),
-            links=_links_from_api(value.get("Links")),
+            areas=_areas_from_api(_api_value(value, "Area")),
+            links=_links_from_api(_api_value(value, "Links")),
         )
 
     @property
