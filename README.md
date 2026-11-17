@@ -10,7 +10,7 @@ Krisinformation is a custom Home Assistant integration for verified Swedish cris
 
 The repository contains both the Home Assistant integration and the bundled `krisinformation-alert-card.js` Lovelace card.
 
-<a href="https://buymeacoffee.com/niklasv" target="_blank"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee"></a>
+[![GitHub Sponsors](https://img.shields.io/badge/Support-GitHub%20Sponsors-30363d?logo=github)](https://github.com/sponsors/Nicxe) [![Buy Me a Coffee](https://img.shields.io/badge/Alternative-Buy%20Me%20a%20Coffee-fdd734?logo=buy-me-a-coffee)](https://buymeacoffee.com/niklasv)
 
 ## Data sources
 
